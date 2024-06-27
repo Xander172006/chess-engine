@@ -8,13 +8,17 @@ def generate_all_moves(pieces, occupied, color, full_board):
 
     # generate enemy pieces
     if color == "white":
-        enemy_pieces = pieces['black_pawns'] | pieces['black_knights'] | pieces['black_bishops'] | pieces['black_rooks'] | pieces['black_queen'] | pieces['black_king']
+        enemy_pieces = (pieces['black_pawns'] | pieces['black_knights'] | 
+                        pieces['black_bishops'] | pieces['black_rooks'] | 
+                        pieces['black_queen'] | pieces['black_king'])
     elif color == "black":
-        enemy_pieces = pieces['white_pawns'] | pieces['white_knights'] | pieces['white_bishops'] | pieces['white_rooks'] | pieces['white_queen'] | pieces['white_king']  
+        enemy_pieces = (pieces['white_pawns'] | pieces['white_knights'] | 
+                        pieces['white_bishops'] | pieces['white_rooks'] | 
+                        pieces['white_queen'] | pieces['white_king']) 
 
     moves['pawns'] = generate_pawn_moves(pieces['pawns'], occupied, enemy_pieces, color)
     moves['knights'] = generate_knight_moves(pieces['knights'], occupied, enemy_pieces)
-    moves['bishops'] = generate_bishop_moves(pieces['bishops'], occupied, color)
+    moves['bishops'] = generate_bishop_moves(pieces['bishops'], occupied, enemy_pieces)
     moves['rooks'] = generate_rook_moves(pieces['rooks'], occupied, color)
     moves['queen'] = generate_queen_moves(pieces['queen'], occupied, color)
     moves['king'] = generate_king_moves(pieces['king'], occupied)
@@ -43,8 +47,6 @@ def generate_pawn_moves(pawns, occupied, enemy_pieces, color):
     return moves
 
 
-
-
 # knight moves ✔
 def generate_knight_moves(knights, occupied, enemy_pieces):
     moves = 0
@@ -63,18 +65,20 @@ def generate_knight_moves(knights, occupied, enemy_pieces):
         if 0 <= target_square < 64 and abs(current_file - target_file) <= 2:
             moves |= 1 << target_square
 
-    # Allow moves to enemy occupied squares
+
+    print(f"knight enemy_pieces: \n {print(type(enemy_pieces))}")
+    print(f"knight: {print(type(moves))}")
+    print(f"knight occupied: {print(type(occupied))}")
     return moves & ~(occupied & ~enemy_pieces)
 
 
 
 
-
-
-# moves for the bishops
-def generate_bishop_moves(bishops, occupied, color):
+# bishop moves ✔
+def generate_bishop_moves(bishops, occupied, enemy_pieces):
     bishop_moves = 0
     directions = [-9, -7, 7, 9]
+    
     for shift in directions:
         ray = shift_bitboard(bishops, shift)
         while ray:
@@ -88,8 +92,12 @@ def generate_bishop_moves(bishops, occupied, color):
                     break
             ray &= ~occupied
             ray = shift_bitboard(ray, shift)
-    return bishop_moves & ~occupied
 
+
+    print(f"bishop enemy_pieces: \n {print(type(enemy_pieces))}")
+    print(f"bishop: {print(type(bishop_moves))}")
+    print(f"bishop occupied: {print(type(occupied))}")
+    return bishop_moves & ~(occupied & ~enemy_pieces)
 
 
 
@@ -109,8 +117,9 @@ def generate_rook_moves(rooks, occupied, color):
 
 # moves for the queens
 def generate_queen_moves(queens, occupied, color):
-    # combine bishop with rook lol :)
-    return generate_bishop_moves(queens, occupied, color) | generate_rook_moves(queens, occupied, color)
+    # # combine bishop with rook lol :)
+    # return generate_bishop_moves(queens, occupied, color) | generate_rook_moves(queens, occupied, color)
+    pass
 
 
 # moves for the kings
