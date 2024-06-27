@@ -31,19 +31,21 @@
                     {% for col in range(8) %}
                     <!-- cols -->
                     <div id="square-{{ row }}-{{ col }}" class="square {% if (row + col) % 2 == 0 %}white{% else %}black{% endif %}">
-                        {% for piece, positions in pieces.items() %}
-                            <!--  squares -->
-                            {% if positions[row][col] %}
-                                <!-- piece -->
-                                <div 
-                                    class="piece {{ piece }}"
-                                    data-piece-name="{{ piece }}"
-                                    data-piece-color="{{ 'white' if piece.startswith('white') else 'black' }}"
-                                >
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>                    
+                            <div id="square-{{ row }}-{{ col }}-frontlayer" class="">
+                            {% for piece, positions in pieces.items() %}
+                                <!--  squares -->
+                                {% if positions[row][col] %}
+                                    <!-- piece -->
+                                    <div 
+                                        class="piece {{ piece }}"
+                                        data-piece-name="{{ piece }}"
+                                        data-piece-color="{{ 'white' if piece.startswith('white') else 'black' }}"
+                                    >
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>     
+                    </div>               
                     {% endfor %}
                 </div>
                 {% endfor %}
@@ -135,7 +137,7 @@
 
                             // highlight the received moves
                             data['moves'].forEach(move => {
-                                let square = $(`#square-${8 - parseInt(move[1])}-${move[0].charCodeAt(0) - 97}`);
+                                let square = $(`#square-${8 - parseInt(move[1])}-${move[0].charCodeAt(0) - 97}-frontlayer`);
                                 square.addClass('highlight');
                             });
                         });

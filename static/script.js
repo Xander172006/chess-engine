@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentHighlightedSquare.style.backgroundColor = '';
             }
 
-            square.style.backgroundColor = '#dfce9f';
+            square.style.backgroundColor = '#318086';
             currentHighlightedSquare = square;
 
             // undo highlight if clicked again

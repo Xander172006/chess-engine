@@ -205,24 +205,71 @@ def runEngine():
     
     return render_template('chessboard.html', board=board, pieces=pieces_board, playerTurn=playerTurn)
 
-
+# gives the moves to the client-side
 @app.route('/get-moves', methods=['POST'])
 def get_moves():
     data = request.get_json()
-    print(data)
 
-    if 'pawns' in data['name']:
-        if data['color'] == 'white':
-            enemy_pieces = pieces.get('black_pawns', 0) | pieces.get('black_knights', 0) | pieces.get('black_bishops', 0) | pieces.get('black_rooks', 0) | pieces.get('black_queen', 0) | pieces.get('black_king', 0)
-        else:
-            enemy_pieces = pieces.get('white_pawns', 0) | pieces.get('white_knights', 0) | pieces.get('white_bishops', 0) | pieces.get('white_rooks', 0) | pieces.get('white_queen', 0) | pieces.get('white_king', 0)
-            
-        moves = generate_pawn_moves(create_bitboard(data['position']), occupied, enemy_pieces, data['color'])
+    piece_moves = handle_moves(data['name'], data['color'], data['position'])
+    # print(piece_moves)
 
-        print(bitboard_to_square(moves))
-        socketio.emit('received-moves', {'moves': bitboard_to_square(moves)})
+    socketio.emit('received-moves', {'moves': piece_moves})
 
     return ('', 204)
+
+# returns the generated moves
+def handle_moves(piece, color, position):
+    white_pieces = pieces.get('white_pawns', 0) | pieces.get('white_knights', 0) | pieces.get('white_bishops', 0) | pieces.get('white_rooks', 0) | pieces.get('white_queen', 0) | pieces.get('white_king', 0)
+    black_pieces = pieces.get('black_pawns', 0) | pieces.get('black_knights', 0) | pieces.get('black_bishops', 0) | pieces.get('black_rooks', 0) | pieces.get('black_queen', 0) | pieces.get('black_king', 0)
+
+    # pawn moves
+    if 'pawns' in piece:
+        if color == 'white':
+            enemy_pieces = black_pieces
+            moves = generate_pawn_moves(create_bitboard(position), occupied, enemy_pieces, color)
+        else:
+            enemy_pieces = white_pieces
+            moves = generate_pawn_moves(create_bitboard(position), occupied, enemy_pieces, color)
+
+    # knight moves
+    if 'knights' in piece:
+        if color == 'white':
+            enemy_pieces = black_pieces
+            moves = generate_knight_moves(create_bitboard(position), occupied, enemy_pieces)
+        else:
+            enemy_pieces = white_pieces
+            moves = generate_knight_moves(create_bitboard(position), occupied, enemy_pieces)
+
+    # bishop moves
+    if 'bishops' in piece:
+        if color == 'white':
+            moves = generate_bishop_moves(create_bitboard(position), occupied, color)
+        else:
+            moves = generate_bishop_moves(create_bitboard(position), occupied, color)
+
+    # rook moves
+    if 'rooks' in piece:
+        if color == 'white':
+            moves = generate_rook_moves(create_bitboard(position), occupied, color)
+        else:
+            moves = generate_rook_moves(create_bitboard(position), occupied, color)
+
+    # queen moves
+    if 'queen' in piece:
+        if color == 'white':
+            moves = generate_queen_moves(create_bitboard(position), occupied, color)
+        else:
+            moves = generate_queen_moves(create_bitboard(position), occupied, color)
+
+    # king moves
+    if 'king' in piece:
+        if color == 'white':
+            moves = generate_king_moves(create_bitboard(position), occupied)
+        else:
+            moves = generate_king_moves(create_bitboard(position), occupied)
+
+
+    return bitboard_to_square(moves)
 
 
 # run app
