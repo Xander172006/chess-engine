@@ -69,3 +69,10 @@ def bitboard_to_square(bitboard):
             squares.append(bit_to_square[i])
     
     return squares
+
+# turn bitboard to (row, col) tuple
+def from_bitboard_to_chess_position(bitboard):
+    position = bitboard.bit_length() - 1
+    row = position // 8
+    col = position % 8
+    return (row, col)

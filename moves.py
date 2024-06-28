@@ -1,5 +1,5 @@
 from app import shift_bitboard, FULL_BOARD
-from bitboard import print_bitboard
+from bitboard import print_bitboard, from_bitboard_to_chess_position
 
 
 # generates all possible moves on the board
@@ -18,10 +18,10 @@ def generate_all_moves(pieces, occupied, color, full_board):
 
     moves['pawns'] = generate_pawn_moves(pieces['pawns'], occupied, enemy_pieces, color)
     moves['knights'] = generate_knight_moves(pieces['knights'], occupied, enemy_pieces)
-    moves['bishops'] = generate_bishop_moves(pieces['bishops'], occupied, enemy_pieces)
-    moves['rooks'] = generate_rook_moves(pieces['rooks'], occupied, color)
-    moves['queen'] = generate_queen_moves(pieces['queen'], occupied, color)
-    moves['king'] = generate_king_moves(pieces['king'], occupied)
+    moves['bishops'] = generate_bishop_moves(from_bitboard_to_chess_position(pieces['bishops']), occupied, enemy_pieces)
+    moves['rooks'] = generate_rook_moves(from_bitboard_to_chess_position(pieces['rooks']), occupied, enemy_pieces)
+    moves['queen'] = generate_queen_moves(from_bitboard_to_chess_position(pieces['queen']), occupied, enemy_pieces)
+    moves['king'] = generate_king_moves(from_bitboard_to_chess_position(pieces['king']), occupied, enemy_pieces)
 
     return moves
 
@@ -76,56 +76,81 @@ def generate_knight_moves(knights, occupied, enemy_pieces):
 
 # bishop moves ✔
 def generate_bishop_moves(bishops, occupied, enemy_pieces):
-    bishop_moves = 0
-    directions = [-9, -7, 7, 9]
-    
-    for shift in directions:
-        ray = shift_bitboard(bishops, shift)
-        while ray:
-            bishop_moves |= ray
-            # Check for edge boundaries
-            if shift in [-9, 7]:  # leftward shifts
-                if ray & 0x0101010101010101:  # pieces in column 'a'
-                    break
-            if shift in [-7, 9]:  # rightward shifts
-                if ray & 0x8080808080808080:  # pieces in column 'h'
-                    break
-            ray &= ~occupied
-            ray = shift_bitboard(ray, shift)
+    directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+    legal_moves = 0
+    start_row, start_col = bishops
+
+    for direction in directions:
+        row_offset, col_offset = direction
+        current_row, current_col = start_row, start_col
+
+        while True:
+            current_row += row_offset
+            current_col += col_offset
+
+            if current_row < 0 or current_row >= 8 or current_col < 0 or current_col >= 8:
+                break
+
+            piece = 1 << (current_row * 8 + current_col)
+            if piece & occupied:
+                if piece & enemy_pieces:
+                    legal_moves |= piece
+                break
+            
+            legal_moves |= piece
+
+    return legal_moves
 
 
-    print(f"bishop enemy_pieces: \n {print(type(enemy_pieces))}")
-    print(f"bishop: {print(type(bishop_moves))}")
-    print(f"bishop occupied: {print(type(occupied))}")
-    return bishop_moves & ~(occupied & ~enemy_pieces)
+
+# rook moves ✔
+def generate_rook_moves(rook, occupied, enemy_pieces):
+    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    legal_moves = 0
+    start_row, start_col = rook
+
+    for direction in directions:
+        row_offset, col_offset = direction
+        current_row, current_col = start_row, start_col
+
+        while True:
+            current_row += row_offset
+            current_col += col_offset
+
+            if current_row < 0 or current_row >= 8 or current_col < 0 or current_col >= 8:
+                break
+
+            piece = 1 << (current_row * 8 + current_col)
+            if piece & occupied:
+                if piece & enemy_pieces:
+                    legal_moves |= piece
+                break
+            
+            legal_moves |= piece
+
+    return legal_moves
 
 
-
-# moves for the rooks
-def generate_rook_moves(rooks, occupied, color):
-    rook_moves = 0
-    for shift in [-8, -1, 1, 8]:
-        # generate moves for each direction
-        ray = shift_bitboard(rooks, shift)
-        while ray:
-            # multiply and combine moves
-            rook_moves |= ray
-            ray &= ~occupied
-            ray = shift_bitboard(ray, shift)
-    return rook_moves & ~occupied
-
-
-# moves for the queens
-def generate_queen_moves(queens, occupied, color):
-    # # combine bishop with rook lol :)
-    # return generate_bishop_moves(queens, occupied, color) | generate_rook_moves(queens, occupied, color)
-    pass
+# queen moves ✔
+def generate_queen_moves(queen, occupied, enemy_pieces):
+    return generate_bishop_moves(queen, occupied, enemy_pieces) | generate_rook_moves(queen, occupied, enemy_pieces)
 
 
 # moves for the kings
-def generate_king_moves(king, occupied):
-    moves = 0
-    # moves 1 square in all directions
-    for shift in [-9, -8, -7, -1, 1, 7, 8, 9]:
-        moves |= shift_bitboard(king, shift)
-    return moves & ~occupied
+def generate_king_moves(king, occupied, enemy_pieces):
+    directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+    legal_moves = 0
+    start_row, start_col = king
+
+    for direction in directions:
+        row_offset, col_offset = direction
+        current_row, current_col = start_row + row_offset, start_col + col_offset
+
+        if current_row < 0 or current_row >= 8 or current_col < 0 or current_col >= 8:
+            continue
+
+        piece = 1 << (current_row * 8 + current_col)
+        if not piece & occupied:
+            legal_moves |= piece
+
+    return legal_moves

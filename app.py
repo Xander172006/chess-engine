@@ -246,31 +246,37 @@ def handle_moves(piece, color, position):
     elif 'bishops' in piece:
         if color == 'white':
             enemy_pieces = black_pieces
-            moves = generate_bishop_moves(create_bitboard(position), occupied, enemy_pieces)
+            moves = generate_bishop_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
         else:
             enemy_pieces = white_pieces
-            moves = generate_bishop_moves(create_bitboard(position), occupied, enemy_pieces)
+            moves = generate_bishop_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
 
     # rook moves
     elif 'rooks' in piece:
         if color == 'white':
-            moves = generate_rook_moves(create_bitboard(position), occupied, color)
+            enemy_pieces = black_pieces
+            moves = generate_rook_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
         else:
-            moves = generate_rook_moves(create_bitboard(position), occupied, color)
+            enemy_pieces = white_pieces
+            moves = generate_rook_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
 
     # queen moves
     elif 'queen' in piece:
         if color == 'white':
-            moves = generate_queen_moves(create_bitboard(position), occupied, color)
+            enemy_pieces = black_pieces
+            moves = generate_queen_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
         else:
-            moves = generate_queen_moves(create_bitboard(position), occupied, color)
+            enemy_pieces = white_pieces
+            moves = generate_queen_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
 
     # king moves
     elif 'king' in piece:
         if color == 'white':
-            moves = generate_king_moves(create_bitboard(position), occupied)
+            enemy_pieces = black_pieces
+            moves = generate_king_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
         else:
-            moves = generate_king_moves(create_bitboard(position), occupied)
+            enemy_pieces = white_pieces
+            moves = generate_king_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
 
 
     return bitboard_to_square(moves)
