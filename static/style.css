@@ -123,27 +123,27 @@ body {
 }
 
 .pawn-move {
-    background-color: rgb(195, 178, 130) !important;
+    background-color: rgb(74, 183, 190) !important;
 }
 
 .knight-move {
-    background-color: rgb(195, 178, 130) !important;
+    background-color: rgb(74, 183, 190) !important;
 }
 
 .bishop-move {
-    background-color: rgb(195, 178, 130) !important;
+    background-color: rgb(74, 183, 190) !important;
 }
 
 .rook-move {
-    background-color: rgb(195, 178, 130) !important;
+    background-color: rgb(74, 183, 190) !important;
 }
 
 .queen-move {
-    background-color: rgb(195, 178, 130) !important;
+    background-color: rgb(74, 183, 190) !important;
 }
 
 .king-move {
-    background-color: rgb(195, 178, 130) !important;
+    background-color: rgb(74, 183, 190) !important;
 }
 
 .row-numberline {
@@ -204,7 +204,10 @@ body {
 }
 
 .highlight {
-    background-color: rgb(195, 178, 130) !important;
-    /* turn background color into circle */
-    opacity: 0.9;
+    background-color: #4ab7be !important;
+    opacity: 0.7 !important;
+    z-index: 1;
+    width: 50%;
+    height: 50%;
+    border-radius: 50%;
 }
