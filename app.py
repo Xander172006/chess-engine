@@ -22,6 +22,7 @@ def handle_disconnect():
     print('Client disconnected')
 
 
+# initialize game sessions
 def initialize_game_state():
     if 'game_state' not in session:
         session['game_state'] = {
@@ -46,9 +47,24 @@ def initialize_game_state():
         }
         session.modified = True
 
+    global bitboard_pieces
+    bitboard_pieces = {
+            'white_pawns': bitboard_to_array(session['game_state']['WHITE_PAWNS']),
+            'white_knights': bitboard_to_array(session['game_state']['WHITE_KNIGHTS']),
+            'white_bishops': bitboard_to_array(session['game_state']['WHITE_BISHOPS']),
+            'white_rooks': bitboard_to_array(session['game_state']['WHITE_ROOKS']),
+            'white_queen': bitboard_to_array(session['game_state']['WHITE_QUEEN']),
+            'white_king': bitboard_to_array(session['game_state']['WHITE_KING']),
+            'black_pawns': bitboard_to_array(session['game_state']['BLACK_PAWNS']),
+            'black_knights': bitboard_to_array(session['game_state']['BLACK_KNIGHTS']),
+            'black_bishops': bitboard_to_array(session['game_state']['BLACK_BISHOPS']),
+            'black_rooks': bitboard_to_array(session['game_state']['BLACK_ROOKS']),
+            'black_queen': bitboard_to_array(session['game_state']['BLACK_QUEEN']),
+            'black_king': bitboard_to_array(session['game_state']['BLACK_KING']),
+    }
 
 
-# handle move event
+# create move event
 @app.route('/make-move', methods=['POST'])
 def create_move():
     if request.method == 'POST':
@@ -78,43 +94,27 @@ def create_move():
         else:
             # wrong players turn
             socketio.emit('wrong-turn', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
-
-
-
-
     return ('', 204)
 
 
 # reset board
 @app.route('/reset-board', methods=['POST'])
 def reset_board():
+    # reset sessions
     session.pop('game_state', None)
     session.pop('player_turn', None)
     session.pop('store_pieces', None)
     initialize_game_state()
     game_state = session['game_state']
 
-    pieces_board = {
-        'white_pawns': bitboard_to_array(game_state['WHITE_PAWNS']),
-        'black_pawns': bitboard_to_array(game_state['BLACK_PAWNS']),
-        'white_rooks': bitboard_to_array(game_state['WHITE_ROOKS']),
-        'black_rooks': bitboard_to_array(game_state['BLACK_ROOKS']),
-        'white_knights': bitboard_to_array(game_state['WHITE_KNIGHTS']),
-        'black_knights': bitboard_to_array(game_state['BLACK_KNIGHTS']),
-        'white_bishops': bitboard_to_array(game_state['WHITE_BISHOPS']),
-        'black_bishops': bitboard_to_array(game_state['BLACK_BISHOPS']),
-        'white_queen': bitboard_to_array(game_state['WHITE_QUEEN']),
-        'black_queen': bitboard_to_array(game_state['BLACK_QUEEN']),
-        'white_king': bitboard_to_array(game_state['WHITE_KING']),
-        'black_king': bitboard_to_array(game_state['BLACK_KING']),
-    }
+    pieces_board = bitboard_pieces
 
     return jsonify(pieces_board)
 
 
-
 # chessboard operator
 def chessboard(game_state, playerTurn):
+    # pieces
     global pieces
     pieces = playerTurnHandling(game_state, playerTurn)
 
@@ -124,12 +124,10 @@ def chessboard(game_state, playerTurn):
                 game_state['WHITE_QUEEN'] | game_state['WHITE_KING'] | game_state['BLACK_PAWNS'] | game_state['BLACK_KNIGHTS'] | 
                 game_state['BLACK_BISHOPS'] | game_state['BLACK_ROOKS'] | game_state['BLACK_QUEEN'] | game_state['BLACK_KING'])
     
-    # generate all moves
+    # generated moves
     global moves
     moves = generate_all_moves(pieces, occupied, playerTurn, FULL_BOARD)
     board = []
-
-
 
     # create chessboard
     for row in range(8):
@@ -140,25 +138,12 @@ def chessboard(game_state, playerTurn):
         board.append(board_row)
 
     # bitboards for all pieces
-    pieces_board = {
-        'white_pawns': bitboard_to_array(game_state['WHITE_PAWNS']),
-        'black_pawns': bitboard_to_array(game_state['BLACK_PAWNS']),
-        'white_rooks': bitboard_to_array(game_state['WHITE_ROOKS']),
-        'black_rooks': bitboard_to_array(game_state['BLACK_ROOKS']),
-        'white_knights': bitboard_to_array(game_state['WHITE_KNIGHTS']),
-        'black_knights': bitboard_to_array(game_state['BLACK_KNIGHTS']),
-        'white_bishops': bitboard_to_array(game_state['WHITE_BISHOPS']),
-        'black_bishops': bitboard_to_array(game_state['BLACK_BISHOPS']),
-        'white_queen': bitboard_to_array(game_state['WHITE_QUEEN']),
-        'black_queen': bitboard_to_array(game_state['BLACK_QUEEN']),
-        'white_king': bitboard_to_array(game_state['WHITE_KING']),
-        'black_king': bitboard_to_array(game_state['BLACK_KING']),
-    }
+    pieces_board = bitboard_pieces
 
     return board, pieces_board
 
 
-# turn handling
+# give correct pieces to the player
 def playerTurnHandling(game_state, color):
     if color == 'white':
         pieces = {
@@ -177,34 +162,21 @@ def playerTurnHandling(game_state, color):
         }
     elif color == 'black':
         pieces = {
-            'pawns': game_state['BLACK_PAWNS'],
-            'knights': game_state['BLACK_KNIGHTS'],
-            'bishops': game_state['BLACK_BISHOPS'],
-            'rooks': game_state['BLACK_ROOKS'],
-            'queen': game_state['BLACK_QUEEN'],
-            'king': game_state['BLACK_KING'],
             'white_pawns': game_state['WHITE_PAWNS'],
             'white_knights': game_state['WHITE_KNIGHTS'],
             'white_bishops': game_state['WHITE_BISHOPS'],
             'white_rooks': game_state['WHITE_ROOKS'],
             'white_queen': game_state['WHITE_QUEEN'],
             'white_king': game_state['WHITE_KING'],
+            'pawns': game_state['BLACK_PAWNS'],
+            'knights': game_state['BLACK_KNIGHTS'],
+            'bishops': game_state['BLACK_BISHOPS'],
+            'rooks': game_state['BLACK_ROOKS'],
+            'queen': game_state['BLACK_QUEEN'],
+            'king': game_state['BLACK_KING'],
     }
 
     return pieces
-
-
-# run the engine
-@app.route('/')
-def runEngine():
-    initialize_game_state()
-    game_state = session['game_state']
-
-    playerTurn = session.get('player_turn', 'white')
-    board, pieces_board = chessboard(game_state, playerTurn)
-    
-    return render_template('chessboard.html', board=board, pieces=pieces_board, playerTurn=playerTurn)
-
 
 
 # gives the moves to the client-side
@@ -218,68 +190,47 @@ def get_moves():
 
     return ('', 204)
 
+
 # returns the generated moves
 def handle_moves(piece, color, position):
     white_pieces = pieces.get('white_pawns', 0) | pieces.get('white_knights', 0) | pieces.get('white_bishops', 0) | pieces.get('white_rooks', 0) | pieces.get('white_queen', 0) | pieces.get('white_king', 0)
     black_pieces = pieces.get('black_pawns', 0) | pieces.get('black_knights', 0) | pieces.get('black_bishops', 0) | pieces.get('black_rooks', 0) | pieces.get('black_queen', 0) | pieces.get('black_king', 0)
 
-    moves = 0
-    # pawn moves
-    if 'pawns' in piece:
-        if color == 'white':
-            enemy_pieces = black_pieces
-            moves = generate_pawn_moves(create_bitboard(position), occupied, enemy_pieces, color)
-        else:
-            enemy_pieces = white_pieces
-            moves = generate_pawn_moves(create_bitboard(position), occupied, enemy_pieces, color)
+    enemy_pieces = black_pieces if color == 'white' else white_pieces
+    position_bitboard = create_bitboard(position)
 
-    # knight moves
-    elif 'knights' in piece:
-        if color == 'white':
-            enemy_pieces = black_pieces
-            moves = generate_knight_moves(create_bitboard(position), occupied, enemy_pieces)
-        else:
-            enemy_pieces = white_pieces
-            moves = generate_knight_moves(create_bitboard(position), occupied, enemy_pieces)
+    move_generators = {
+        'pawns': generate_pawn_moves,
+        'knights': generate_knight_moves,
+        'bishops': generate_bishop_moves,
+        'rooks': generate_rook_moves,
+        'queen': generate_queen_moves,
+        'king': generate_king_moves,
+    }
 
-    # bishop moves
-    elif 'bishops' in piece:
-        if color == 'white':
-            enemy_pieces = black_pieces
-            moves = generate_bishop_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-        else:
-            enemy_pieces = white_pieces
-            moves = generate_bishop_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-
-    # rook moves
-    elif 'rooks' in piece:
-        if color == 'white':
-            enemy_pieces = black_pieces
-            moves = generate_rook_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-        else:
-            enemy_pieces = white_pieces
-            moves = generate_rook_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-
-    # queen moves
-    elif 'queen' in piece:
-        if color == 'white':
-            enemy_pieces = black_pieces
-            moves = generate_queen_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-        else:
-            enemy_pieces = white_pieces
-            moves = generate_queen_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-
-    # king moves
-    elif 'king' in piece:
-        if color == 'white':
-            enemy_pieces = black_pieces
-            moves = generate_king_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-        else:
-            enemy_pieces = white_pieces
-            moves = generate_king_moves(from_bitboard_to_chess_position(create_bitboard(position)), occupied, enemy_pieces)
-
+    for key, move_generator in move_generators.items():
+        if key in piece:
+            if key == 'pawns':
+                moves = move_generator(position_bitboard, occupied, enemy_pieces, color)
+            elif key == 'knights':
+                moves = move_generator(position_bitboard, occupied, enemy_pieces)
+            else:
+                moves = move_generator(from_bitboard_to_chess_position(position_bitboard), occupied, enemy_pieces)
+            break
 
     return bitboard_to_square(moves)
+
+
+# run the engine
+@app.route('/')
+def runEngine():
+    initialize_game_state()
+    game_state = session['game_state']
+
+    playerTurn = session.get('player_turn', 'white')
+    board, pieces_board = chessboard(game_state, playerTurn)
+    
+    return render_template('chessboard.html', board=board, pieces=pieces_board, playerTurn=playerTurn)
 
 
 # run app

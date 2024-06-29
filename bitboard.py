@@ -18,7 +18,7 @@ BLACK_QUEEN = 0x0800000000000000
 BLACK_KING = 0x1000000000000000
 
 
-# create array
+# create 1 dimensional array
 def bitboard_to_array(bitboard):
     array = [[0 for _ in range(8)] for _ in range(8)]
     for row in range(8):
@@ -28,14 +28,14 @@ def bitboard_to_array(bitboard):
     return array
 
 
-# display bitboard
+# print bitboard
 def print_bitboard(bitboard):
     board = bitboard_to_array(bitboard)
     for row in board:
         print(" ".join(str(cell) for cell in row))
 
 
-# shifts bitboard
+# shift bitboard
 def shift_bitboard(bitboard, shift):
     if shift > 0:
         return (bitboard << shift) & FULL_BOARD
@@ -43,7 +43,7 @@ def shift_bitboard(bitboard, shift):
         return (bitboard >> -shift) & FULL_BOARD
 
 
-# write chess notation
+# create chess notation
 def chess_notation(square):
     file = ord(square[0]) - ord('a')
     rank = 8 - int(square[1])
@@ -57,6 +57,7 @@ def create_bitboard(square):
     return 1 << (rank * 8 + file)
 
 
+# create chess notation from bitboard
 def bitboard_to_square(bitboard):
     bit_to_square = []
     for rank in range(8):
@@ -70,7 +71,8 @@ def bitboard_to_square(bitboard):
     
     return squares
 
-# turn bitboard to (row, col) tuple
+
+# create chess position
 def from_bitboard_to_chess_position(bitboard):
     position = bitboard.bit_length() - 1
     row = position // 8
