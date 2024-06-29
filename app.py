@@ -3,7 +3,6 @@ from flask_socketio import SocketIO, emit
 
 from moves import *
 from bitboard import *
-from rules import validateMove
 
 
 # create app
@@ -64,6 +63,7 @@ def initialize_game_state():
     }
 
 
+
 # create move event
 @app.route('/make-move', methods=['POST'])
 def create_move():
@@ -81,7 +81,7 @@ def create_move():
         player_turn = session.get('player_turn', 'white')
 
         if game_state and player_turn == action['color']:
-            validation = validateMove(action, moves, game_state, turn_count)
+            validation, message = validateMove(action, moves, game_state, occupied)
             if validation:
                 session['game_state'] = game_state
                 session['turn_count'] = turn_count + 1
@@ -90,7 +90,7 @@ def create_move():
                 socketio.emit('move-made', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
             else:
                 # invalid move
-                socketio.emit('invalid-move', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
+                socketio.emit('invalid-move', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color'], 'message': message})
         else:
             # wrong players turn
             socketio.emit('wrong-turn', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})

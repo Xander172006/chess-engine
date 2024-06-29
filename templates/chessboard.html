@@ -67,7 +67,7 @@
     <div id="invalid-move-modal" style="display: none;">
         <div class="modal-content">
             <span id="close-modal">&times;</span>
-            <p>Invalid move! Please try again.</p>
+            <p>Invalid move</p>
         </div>
     </div>
 
@@ -222,6 +222,10 @@
                     success: function(response) {
                         console.log("Board has been reset");
                         updateBoard(response);
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
                     },
                     error: function(xhr, status, error) {
                         console.error("Error:", error);
@@ -269,10 +273,14 @@
                 $('#close-invalid-move-modal').on('click', function() {
                     $('#invalid-move-modal').hide();
                 });
+
+                let message = data.message;
+                document.querySelector('.invalid-move-message').innerText = message;
+
         
                 setTimeout(() => {
                     $('#invalid-move-modal').hide();
-                }, 1000);
+                }, 5000);
             });
 
             // show wrong turn event pop up
