@@ -3,6 +3,7 @@ from flask import session
 from app import *
 from common_utils import *
 from move_generations import *
+from players import playerTurnHandling
 import setup
 
 
@@ -12,6 +13,7 @@ def validateMove(action, moves, game_state, occupied):
     message = ""
     is_legal = False
 
+    global piece_mapping
     piece_mapping = {
         'white': {
             'pawn': 'WHITE_PAWNS',
@@ -30,6 +32,7 @@ def validateMove(action, moves, game_state, occupied):
             'king': 'BLACK_KING'
         }
     }
+
 
     # player action
     bitboard_pos = create_bitboard(action['position'])
@@ -87,6 +90,7 @@ def validateMove(action, moves, game_state, occupied):
         game_state[f"{action['name'].upper()}"] ^= bitboard_pos
         game_state[f"{action['name'].upper()}"] |= bitboard_dest
 
+        # print(is_check(game_state, piece_mapping, occupied, action['color']))
         # check for capture event
         if enemy_pieces & bitboard_dest:
             for piece, variable in piece_mapping[enemy_color].items():
@@ -109,6 +113,24 @@ def validateMove(action, moves, game_state, occupied):
 def is_legal_move(legal_moves, my_move):
     result = [[legal_moves[row][col] & my_move[row][col] for col in range(8)] for row in range(8)]
     return result == my_move
+
+
+def is_check(game_state, occupied, color):
+    enemy_color = 'white' if color == 'black' else 'black'
+    king_pos = game_state[piece_mapping[color]['king']]
+
+    enemy_pieces = playerTurnHandling(game_state, enemy_color)
+    enemy_moves = generate_all_moves(enemy_pieces, occupied, enemy_color, full_board=None)
+    my_moves = generate_all_moves(playerTurnHandling(game_state, color), occupied, color, full_board=None)
+
+    # Check if the king's position is in the enemy's move set
+    return (king_pos & enemy_moves['queen']) != 0 or \
+           (king_pos & enemy_moves['rooks']) != 0 or \
+           (king_pos & enemy_moves['bishops']) != 0 or \
+           (king_pos & enemy_moves['knights']) != 0 or \
+           (king_pos & enemy_moves['pawns']) != 0 or \
+           (king_pos & enemy_moves['king']) != 0
+
             
 
 def castlingRights():
