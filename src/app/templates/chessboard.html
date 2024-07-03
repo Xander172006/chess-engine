@@ -72,6 +72,14 @@
     </div>
 </div>
 
+<!-- king danger -->
+<div id="king-danger-modal" style="display: none;">
+    <div class="modal-content">
+        <span id="close-king-danger-modal">&times;</span>
+        <p>The <span id="player-color"></span> king is in check.</p>
+    </div>
+</div>
+
 <script>
     $(document).ready(function() {
         const socket = io();
@@ -283,6 +291,29 @@
             }, 1000);
 
         });
+
+
+        socket.on('king-danger', function(data) {
+            $('#king-danger-modal').show();
+            let playerColor = document.getElementById('player-color');
+            playerColor.classList.remove('player-color-black', 'player-color-white');
+
+            if (data.color === 'white') {
+                playerColor.innerText = 'black';
+                playerColor.classList.add('player-color-black');
+            } else {
+                playerColor.innerText = 'white';
+                playerColor.classList.add('player-color-white');
+            }
+
+            $('#close-king-danger-modal').on('click', function() {
+                $('#king-danger-modal').hide();
+            });
+
+            setTimeout(() => {
+                $('#king-danger-modal').hide();
+            }, 1000);
+        })
     });
 </script>
 

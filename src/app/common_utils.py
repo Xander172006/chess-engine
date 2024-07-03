@@ -57,3 +57,10 @@ def bitboard_to_square(bitboard):
             squares.append(bit_to_square[i])
     
     return squares
+
+
+# 2 dimensional array conversion (array)
+def print_bitboard(bitboard):
+    board = bitboard_to_array(bitboard)
+    for row in board:
+        print(" ".join(str(cell) for cell in row))

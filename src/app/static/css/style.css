@@ -151,7 +151,7 @@ body {
     position: absolute;
 }
 
-#invalid-move-modal, #wrong-turn-modal {
+#invalid-move-modal, #wrong-turn-modal, #king-danger-modal {
     position: absolute;
     color: red;
     z-index: 2;
