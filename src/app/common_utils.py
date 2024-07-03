@@ -1,8 +1,7 @@
-from app import *
-
 EMPTY = 0
 FULL_BOARD = 0xFFFFFFFFFFFFFFFF
 
+# white
 WHITE_PAWNS = 0x000000000000FF00
 WHITE_KNIGHTS = 0x0000000000000042
 WHITE_BISHOPS = 0x0000000000000024
@@ -10,6 +9,7 @@ WHITE_ROOKS = 0x0000000000000081
 WHITE_QUEEN = 0x0000000000000008
 WHITE_KING = 0x0000000000000010
 
+# black
 BLACK_PAWNS = 0x00FF000000000000
 BLACK_KNIGHTS = 0x4200000000000000
 BLACK_BISHOPS = 0x2400000000000000
@@ -18,7 +18,8 @@ BLACK_QUEEN = 0x0800000000000000
 BLACK_KING = 0x1000000000000000
 
 
-# create 1 dimensional array
+
+# array conversion (array)
 def bitboard_to_array(bitboard):
     array = [[0 for _ in range(8)] for _ in range(8)]
     for row in range(8):
@@ -28,36 +29,22 @@ def bitboard_to_array(bitboard):
     return array
 
 
-# print bitboard
-def print_bitboard(bitboard):
-    board = bitboard_to_array(bitboard)
-    for row in board:
-        print(" ".join(str(cell) for cell in row))
+# chess coördination conversion (horizontal, vertical)
+def from_bitboard_to_chess_position(bitboard):
+    position = bitboard.bit_length() - 1
+    row = position // 8
+    col = position % 8
+    return (row, col)
 
 
-# shift bitboard
-def shift_bitboard(bitboard, shift):
-    if shift > 0:
-        return (bitboard << shift) & FULL_BOARD
-    else:
-        return (bitboard >> -shift) & FULL_BOARD
-
-
-# create chess notation
-def chess_notation(square):
-    file = ord(square[0]) - ord('a')
-    rank = 8 - int(square[1])
-    return (rank, file)
-
-
-# create bitboard
+# bitboard creation (number)
 def create_bitboard(square):
     file = ord(square[0]) - ord('a')
     rank = int(square[1]) - 1
     return 1 << (rank * 8 + file)
 
 
-# create chess notation from bitboard
+# chess notation conversion (letter)(number)
 def bitboard_to_square(bitboard):
     bit_to_square = []
     for rank in range(8):
@@ -70,11 +57,3 @@ def bitboard_to_square(bitboard):
             squares.append(bit_to_square[i])
     
     return squares
-
-
-# create chess position
-def from_bitboard_to_chess_position(bitboard):
-    position = bitboard.bit_length() - 1
-    row = position // 8
-    col = position % 8
-    return (row, col)

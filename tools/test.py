@@ -59,8 +59,6 @@ def generate_bishop_moves(bishops, occupied, enemy_pieces):
 
     return legal_moves
 
-
-
 # rook moves ✔
 def generate_rook_moves(rook, occupied, enemy_pieces):
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
@@ -132,16 +130,37 @@ BLACK_ROOKS = 0x8100000000000000
 BLACK_QUEEN = 0x0800000000000000
 BLACK_KING = 0x1000000000000000
 
+white_queen_moves = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 1],
+    [0, 0, 0, 0, 0, 0, 1, 1],
+    [0, 0, 0, 0, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1],
+    [0, 0, 0, 0, 0, 1, 0, 1],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0]
+]
+
+
+black_king_position = [
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+
+
+
+
+
 occupied = (WHITE_PAWNS | BLACK_PAWNS | WHITE_KNIGHTS | BLACK_KNIGHTS |
             WHITE_BISHOPS | BLACK_BISHOPS | WHITE_ROOKS | BLACK_ROOKS |
             WHITE_QUEEN | BLACK_QUEEN | WHITE_KING | BLACK_KING)
 
 enemy_pieces = (BLACK_PAWNS | BLACK_KNIGHTS | BLACK_BISHOPS |
                 BLACK_ROOKS | BLACK_QUEEN | BLACK_KING)
-
-# Generate moves for the rook on h1
-print("b6 king:")
-king_pos = from_bitboard_to_chess_position(create_bitboard('b6'))
-
-print_bitboard(generate_king_moves(king_pos, occupied, enemy_pieces))
-

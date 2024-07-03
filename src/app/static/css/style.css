@@ -103,18 +103,19 @@ body {
     height: 3.5rem;
 }
 
-.piece.white_pawns { background-image: url('/static/images/pieces/white_pawn.png'); }
-.piece.black_pawns { background-image: url('/static/images/pieces/black_pawn.png'); }
-.piece.white_rooks { background-image: url('/static/images/pieces/white_rook.png'); }
-.piece.black_rooks { background-image: url('/static/images/pieces/black_rook.png'); }
-.piece.white_knights { background-image: url('/static/images/pieces/white_knight.png'); }
-.piece.black_knights { background-image: url('/static/images/pieces/black_knight.png'); }
-.piece.white_bishops { background-image: url('/static/images/pieces/white_bishop.png'); }
-.piece.black_bishops { background-image: url('/static/images/pieces/black_bishop.png'); }
-.piece.white_queen { background-image: url('/static/images/pieces/white_queen.png'); }
-.piece.black_queen { background-image: url('/static/images/pieces/black_queen.png'); }
-.piece.white_king { background-image: url('/static/images/pieces/white_king.png'); }
-.piece.black_king { background-image: url('/static/images/pieces/black_king.png'); }
+.piece.black_king { background-image: url('../assets/pieces/black_king.png'); }
+.piece.white_king { background-image: url('../assets/pieces/white_king.png'); }
+.piece.black_queen { background-image: url('../assets/pieces/black_queen.png'); }
+.piece.white_queen { background-image: url('../assets/pieces/white_queen.png'); }
+.piece.black_rooks { background-image: url('../assets/pieces/black_rook.png'); }
+.piece.white_rooks { background-image: url('../assets/pieces/white_rook.png'); }
+.piece.black_bishops { background-image: url('../assets/pieces/black_bishop.png'); }
+.piece.white_bishops { background-image: url('../assets/pieces/white_bishop.png'); }
+.piece.black_knights { background-image: url('../assets/pieces/black_knight.png'); }
+.piece.white_knights { background-image: url('../assets/pieces/white_knight.png'); }
+.piece.black_pawns { background-image: url('../assets/pieces/black_pawn.png'); }
+.piece.white_pawns { background-image: url('../assets/pieces/white_pawn.png'); }
+
 
 .highlight-buttons {
     display: flex;
@@ -185,14 +186,14 @@ body {
 
 .players-turn {
     color: white;
-    width: 97.5%;
+    width: 97%;
     background: rgb(0, 89, 100);
     display: flex;
     justify-content: center;
     height: auto;
     font-size: 0.75rem;
     font-family: Arial, Helvetica, sans-serif;
-    margin-left: 0.75rem;
+    margin-left: 1rem;
 }
 
 .players-white {
