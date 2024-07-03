@@ -1,21 +1,16 @@
-from app import shift_bitboard, FULL_BOARD
-from bitboard import print_bitboard, from_bitboard_to_chess_position
+from common_utils import *
 
-
-# generates all possible moves on the board
+# all moves generation
 def generate_all_moves(pieces, occupied, color, full_board):
     moves = {}
 
-    # generate enemy pieces
-    if color == "white":
-        enemy_pieces = (pieces['black_pawns'] | pieces['black_knights'] | 
-                        pieces['black_bishops'] | pieces['black_rooks'] | 
-                        pieces['black_queen'] | pieces['black_king'])
-    elif color == "black":
-        enemy_pieces = (pieces['white_pawns'] | pieces['white_knights'] | 
-                        pieces['white_bishops'] | pieces['white_rooks'] | 
-                        pieces['white_queen'] | pieces['white_king']) 
+    # get enemy pieces
+    enemy_color = 'black' if color == 'white' else 'white'    
+    enemy_pieces = (pieces[f"{enemy_color}_pawns"] | pieces[f"{enemy_color}_knights"] | 
+                    pieces[f"{enemy_color}_bishops"] | pieces[f"{enemy_color}_rooks"] | 
+                    pieces[f"{enemy_color}_queen"] | pieces[f"{enemy_color}_king"]) 
 
+    # Generate moves for each piece
     moves['pawns'] = generate_pawn_moves(pieces['pawns'], occupied, enemy_pieces, color)
     moves['knights'] = generate_knight_moves(pieces['knights'], occupied, enemy_pieces)
     moves['bishops'] = generate_bishop_moves(from_bitboard_to_chess_position(pieces['bishops']), occupied, enemy_pieces)
@@ -26,11 +21,12 @@ def generate_all_moves(pieces, occupied, color, full_board):
     return moves
 
 
-# pawn moves ✔
+
+# pawn moves
 def generate_pawn_moves(pawns, occupied, enemy_pieces, color):
+    # moveset: move 1 or 2 squares forward, capture diagonally
     moves = 0
 
-    # moveset for each color
     if color == "white":
         single_step = (pawns << 8) & ~occupied
         double_step = ((single_step & 0x0000000000FF0000) << 8) & ~occupied
@@ -47,8 +43,10 @@ def generate_pawn_moves(pawns, occupied, enemy_pieces, color):
     return moves
 
 
-# knight moves ✔
+
+# knight moves
 def generate_knight_moves(knights, occupied, enemy_pieces):
+    # moveset: move in L shapes
     moves = 0
     knight_pos = knights.bit_length() - 1
 
@@ -57,25 +55,21 @@ def generate_knight_moves(knights, occupied, enemy_pieces):
     for move in knight_moves:
         target_square = knight_pos + move
 
-        # Calculate file and rank of current and target squares
+        # gvie current and target file
         current_file = knight_pos % 8
         target_file = target_square % 8
 
-        # Check if move is within board bounds and not moving off the board edges
+        # validate move between boundaries
         if 0 <= target_square < 64 and abs(current_file - target_file) <= 2:
             moves |= 1 << target_square
 
-
-    print(f"knight enemy_pieces: \n {print(type(enemy_pieces))}")
-    print(f"knight: {print(type(moves))}")
-    print(f"knight occupied: {print(type(occupied))}")
     return moves & ~(occupied & ~enemy_pieces)
 
 
 
-
-# bishop moves ✔
+# bishop moves
 def generate_bishop_moves(bishops, occupied, enemy_pieces):
+    # moveset: move diagonally across the board
     directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
     legal_moves = 0
     start_row, start_col = bishops
@@ -103,8 +97,9 @@ def generate_bishop_moves(bishops, occupied, enemy_pieces):
 
 
 
-# rook moves ✔
+# rook moves
 def generate_rook_moves(rook, occupied, enemy_pieces):
+    # moveset: move horizontally and vertically
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     legal_moves = 0
     start_row, start_col = rook
@@ -131,13 +126,17 @@ def generate_rook_moves(rook, occupied, enemy_pieces):
     return legal_moves
 
 
-# queen moves ✔
+
+# queen moves
 def generate_queen_moves(queen, occupied, enemy_pieces):
+    # moveset: move diagonally, horizontally and vertically
     return generate_bishop_moves(queen, occupied, enemy_pieces) | generate_rook_moves(queen, occupied, enemy_pieces)
 
 
-# moves for the kings
+
+# king moves
 def generate_king_moves(king, occupied, enemy_pieces):
+    # moveset: move 1 square in any direction
     directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
     legal_moves = 0
     start_row, start_col = king
