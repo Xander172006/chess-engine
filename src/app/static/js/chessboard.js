@@ -37,7 +37,7 @@ $(document).ready(function() {
 
                 $.ajax({
                     type: 'POST',
-                    url: "/get_moves",
+                    url: "/get-moves",
                     contentType: 'application/json',
                     data: JSON.stringify({
                         position: moveFrom.notation,
@@ -70,7 +70,7 @@ $(document).ready(function() {
             if (clickCounter === 2) {
                 $.ajax({
                     type: 'POST',
-                    url: "/create_move",
+                    url: "/make_move",
                     contentType: 'application/json',
                     data: JSON.stringify({
                         position: moveFrom.notation,
@@ -208,4 +208,26 @@ $(document).ready(function() {
         }, 1000);
 
     });
+
+    socket.on('king-danger', function(data) {
+        $('#king-danger-modal').show();
+        let playerColor = document.getElementById('player-color');
+        playerColor.classList.remove('player-color-black', 'player-color-white');
+
+        if (data.color === 'white') {
+            playerColor.innerText = 'black';
+            playerColor.classList.add('player-color-black');
+        } else {
+            playerColor.innerText = 'white';
+            playerColor.classList.add('player-color-white');
+        }
+
+        $('#close-king-danger-modal').on('click', function() {
+            $('#king-danger-modal').hide();
+        });
+
+        setTimeout(() => {
+            $('#king-danger-modal').hide();
+        }, 1000);
+    })
 });

@@ -4,33 +4,53 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    /* background-color: #f0f0f0; */
-    background-color: black;
+    background-color: rgb(14, 27, 32);
 }
 
-.main_container {
+.chessboard-page-container {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+
+.game-state-container {
+    margin-bottom: auto;
+}
+
+.players-turn {
     display: flex;
     justify-content: center;
+    align-items: center;
+    color: white;
+    width: 75%;
+    margin: 0 auto;
+    background: rgb(0, 89, 100);
+    height: auto;
+    font-size: 0.75rem;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-bottom: 1rem;
+}
+
+.chessboard-section-container {
+    display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
-}
-
-.chess_engine_title {
-    font-family: Arial, Helvetica, sans-serif;
-    display: flex;
-    justify-content: center;
+    padding: 0 1rem;
 }
 
 .chessboard-container {
     display: flex;
+    position: relative;
+    border: none; /* Remove the outer border */
 }
 
 .numberline {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     justify-content: center;
-    margin-right: 0.5rem;
+    position: absolute;
+    left: -1rem; /* Adjust this value to align properly */
+    bottom: 1.25rem;
 }
 
 .number {
@@ -39,14 +59,16 @@ body {
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 1.25rem;
+    font-size: 1rem;
+    opacity: 0.6;
 }
 
 .letterline {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    margin-right: 0.5rem;
+    margin-top: 0.25rem;
+    margin-right: 2.5rem;
 }
 
 .letter {
@@ -55,17 +77,17 @@ body {
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 1.25rem;
-    position: relative;
-    bottom: 0.5rem;
+    font-size: 1rem;
+    opacity: 0.6;
 }
-
 
 .chessboard {
     display: grid;
     grid-template-columns: repeat(8, 4rem);
     grid-template-rows: repeat(8, 4rem);
     gap: 0;
+    border: 2px solid #a9b6d7; /* Apply the border directly to the chessboard */
+    box-sizing: border-box; /* Ensure the border is included in the element's dimensions */
 }
 
 .row {
@@ -80,13 +102,12 @@ body {
     align-items: center;
 }
 
-
 .square.white {
-    background-color: #ffffff;
+    background-color: #a9b6d7;
 }
 
 .square.black {
-    background-color: #003846;
+    background-color: #1d2f3a;
 }
 
 .piece {
@@ -116,34 +137,13 @@ body {
 .piece.black_pawns { background-image: url('../assets/pieces/black_pawn.png'); }
 .piece.white_pawns { background-image: url('../assets/pieces/white_pawn.png'); }
 
-
 .highlight-buttons {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
 }
 
-.pawn-move {
-    background-color: rgb(74, 183, 190) !important;
-}
-
-.knight-move {
-    background-color: rgb(74, 183, 190) !important;
-}
-
-.bishop-move {
-    background-color: rgb(74, 183, 190) !important;
-}
-
-.rook-move {
-    background-color: rgb(74, 183, 190) !important;
-}
-
-.queen-move {
-    background-color: rgb(74, 183, 190) !important;
-}
-
-.king-move {
+.pawn-move, .knight-move, .bishop-move, .rook-move, .queen-move, .king-move {
     background-color: rgb(74, 183, 190) !important;
 }
 
@@ -160,7 +160,6 @@ body {
     background-color: rgb(0, 86, 92);
     border-radius: 0.5rem;
     font-size: 1.1rem;
-    /* change background color opacity */
 }
 
 .modal-content {
@@ -184,18 +183,6 @@ body {
     font-weight: bold;
 }
 
-.players-turn {
-    color: white;
-    width: 97%;
-    background: rgb(0, 89, 100);
-    display: flex;
-    justify-content: center;
-    height: auto;
-    font-size: 0.75rem;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-left: 1rem;
-}
-
 .players-white {
     color: white;
 }
@@ -205,7 +192,7 @@ body {
 }
 
 .highlight {
-    background-color: #4ab7be !important;
+    background-color: #4c7098 !important;
     opacity: 0.7 !important;
     z-index: 1;
     width: 50%;
