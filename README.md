@@ -62,7 +62,11 @@ By default there will be a session to keep track of the current game state, play
 Following the rules of chess, you can learn more about it [`here`](https://en.wikipedia.org/wiki/Chess).
 
 To make a move, you have to select the piece you want to move and then follow it up with a designated square to move to. The game will automatically update the board accordingly.
-<video src="./documentation/videos/usage_chess-engine.mp4" width="500" height="350"></video>
+
+
+https://github.com/Xander172006/chess-engine/assets/136751241/c3fffe12-6834-4932-b82f-b617ec7258c8
+
+
 
 ## Contributors
 
