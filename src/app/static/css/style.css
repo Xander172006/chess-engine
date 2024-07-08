@@ -9,8 +9,10 @@ body {
 
 .chessboard-page-container {
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: row;
     align-items: center;
+    width: 60%;
+    height: 80%;
 }
 
 .game-state-container {
@@ -22,12 +24,13 @@ body {
     justify-content: center;
     align-items: center;
     color: white;
-    width: 75%;
+    width: 80%;
     margin: 0 auto;
-    background: rgb(0, 89, 100);
+    background: rgb(89, 124, 129);
     height: auto;
     font-size: 0.75rem;
     font-family: Arial, Helvetica, sans-serif;
+    font-weight: 200 !important;
     margin-bottom: 1rem;
 }
 
@@ -198,4 +201,96 @@ body {
     width: 50%;
     height: 50%;
     border-radius: 50%;
+}
+
+
+.game-statistics-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: auto;
+    background-color: #1d2f3a;
+    min-width: 30%;
+    border-radius: 7.5px;
+    height: 100%;
+}
+
+.reset-board-btn {
+    align-self: flex-end;
+    margin-top: auto;
+    margin-bottom: 1rem;
+    margin-right: 1rem;
+}
+
+/* div */
+.list-container {
+    width: 100%;
+    overflow: hidden; 
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+/* ul */
+#list-notations {
+    color: white;
+    font-size: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    place-content: center;
+    width: 100%;
+    margin: 0;
+    padding: 0; 
+    box-sizing: border-box;
+    counter-reset: notation-counter; 
+}
+
+/* li */
+#list-notations > li {
+    list-style: none;
+    box-sizing: border-box; 
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+
+#list-notations > li:nth-child(4n-3),
+#list-notations > li:nth-child(4n-2) {
+    background-color: rgba(245, 245, 245, 0.1);
+    padding: 0.25rem 0;
+}
+
+#list-notations > li:nth-child(4n-1),
+#list-notations > li:nth-child(4n) {
+    padding: 0.25rem 0;
+}
+
+
+
+
+/* li < element */
+#list-notations > li:nth-child(odd) {
+    padding-left: 3em;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+#list-notation > li:nth-child(even) {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+
+
+
+/* element > li */
+#list-notations > li:nth-child(odd)::before {
+    content: counter(notation-counter) ". ";
+    counter-increment: notation-counter; 
+    position: absolute; 
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold; 
+    color: white;
+    padding-left: 0.5rem;
 }

@@ -60,11 +60,20 @@
         </section>
     </div>
 
-    <button id="reset-board-btn">Reset Board</button>
-
-
+    
     <section>
         {% include 'components/message-displays.html' %}
+    </section>
+
+
+    <section class="game-statistics-container">
+        <div class="list-container">
+            <ul id="list-notations">
+
+            </ul>
+        </div>
+        
+        <button class="reset-board-btn" id="reset-board-btn">Reset Board</button>
     </section>
 </main>
 {% endblock %}

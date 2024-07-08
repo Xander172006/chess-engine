@@ -4,12 +4,29 @@ $(document).ready(function() {
     let moveFrom = null;
     let moveTo = null;
     let clickCounter = 0;
+    let validMove = true;
+
+    piece_symbols = [
+        '♟', '♞', '♝', '♜', '♛', '♚',
+    ]
+
+    // Retrieve and display stored notations
+    let storedNotations = JSON.parse(localStorage.getItem('notations')) || [];
+    storedNotations.forEach(notation => {
+        console.log(notation);
+
+        let list_notations = document.getElementById('list-notations');
+        let li = document.createElement('li');
+        li.innerText = notation;
+        list_notations.appendChild(li);
+    });
 
     // handle player color
     let playerTurn = document.getElementById('turn');
     playerTurn.style.color = playerTurn.innerText === 'white' ? 'white' : 'black';
+    playerTurn.style.fontSize = '20px';
 
-    // -------------- move resuest --------------
+    // -------------- move request --------------
 
     // Add event listener to each square
     squares.forEach(square => {
@@ -17,17 +34,17 @@ $(document).ready(function() {
             let squareId = square.id;
             let rowIndex = squareId.split('-')[1];
             let colIndex = squareId.split('-')[2];
-            
+
             let rowLetter = String.fromCharCode(97 + parseInt(colIndex));
             let colNumber = 8 - parseInt(rowIndex);
             let notation = `${rowLetter}${colNumber}`;
-            
+
             console.log(notation);
-            
+
             let pieceElement = square.querySelector('.piece');
             let pieceName = pieceElement ? pieceElement.dataset.pieceName : null;
             let pieceColor = pieceElement ? pieceElement.dataset.pieceColor : null;
-            
+
             if (clickCounter === 0) {
                 moveFrom = {
                     notation: notation,
@@ -44,7 +61,7 @@ $(document).ready(function() {
                         name: moveFrom.piece,
                         color: moveFrom.color
                     }),
-                })
+                });
 
                 socket.on('received-moves', function(data) {
                     console.log("Moves received:", data['moves']);
@@ -63,11 +80,13 @@ $(document).ready(function() {
                     color: pieceColor
                 };
             }
-            
+
             clickCounter++;
-            
+
             // send move information
             if (clickCounter === 2) {
+                validMove = true;
+
                 $.ajax({
                     type: 'POST',
                     url: "/make_move",
@@ -81,6 +100,37 @@ $(document).ready(function() {
                     success: function(response) {
                         console.log("Move has been created");
 
+                        if (validMove) {
+                            // Store the moveTo notation in localStorage
+                            chessPiece = moveFrom.piece;
+                            icon = ''
+
+                            console.log(chessPiece);
+                            if (chessPiece == 'white_pawns' || chessPiece == 'black_pawns') {
+                                icon = piece_symbols[0];
+                            } else if (chessPiece == 'white_knights' || chessPiece == 'black_knights') {
+                                icon = piece_symbols[1];
+                            } else if (chessPiece == 'white_bishops' || chessPiece == 'black_bishops') {
+                                icon = piece_symbols[2];
+                            } else if (chessPiece == 'white_rooks' || chessPiece == 'rooks') {
+                                icon = piece_symbols[3];
+                            } else if (chessPiece == 'white_queen' || chessPiece == 'black_queen') {
+                                icon = piece_symbols[4];
+                            } else if (chessPiece == 'white_king' || chessPiece == 'black_king') {
+                                icon = piece_symbols[5];
+                            }
+
+
+
+                            storedNotations.push(`${icon}${moveTo.notation}`);
+                            localStorage.setItem('notations', JSON.stringify(storedNotations));
+
+                            let list_notations = document.getElementById('list-notations');
+                            let li = document.createElement('li');
+                            li.innerText = moveTo.notation;
+                            list_notations.appendChild(li);
+                        }
+
                         // automatic reload after move
                         setTimeout(() => {
                             location.reload();
@@ -90,7 +140,7 @@ $(document).ready(function() {
                         console.error("Error:", error);
                     }
                 });
-                
+
                 clickCounter = 0;
             }
         });
@@ -102,7 +152,7 @@ $(document).ready(function() {
     function updateBoard(pieces) {
         // Clear all squares
         $('.piece').remove();
-    
+
         // Update squares with new pieces
         for (let piece in pieces) {
             let positions = pieces[piece];
@@ -130,6 +180,13 @@ $(document).ready(function() {
             success: function(response) {
                 console.log("Board has been reset");
                 updateBoard(response);
+
+                localStorage.clear();
+                // remove li elements
+                let list_notations = document.getElementById('list-notations');
+                while (list_notations.firstChild) {
+                    list_notations.removeChild(list_notations.firstChild);
+                }
 
                 setTimeout(() => {
                     location.reload();
@@ -171,22 +228,31 @@ $(document).ready(function() {
 
     // show invalid move event pop up
     socket.on('invalid-move', function(data) {
+        validMove = false;
         $('#invalid-move-modal').show();
 
         $('#close-invalid-move-modal').on('click', function() {
             $('#invalid-move-modal').hide();
         });
 
-        let message = data.message;
-        document.querySelector('.invalid-move-message').innerText = message;
+        let message = data.message || "Invalid move."; // Default message if data.message is undefined
+        let invalidMoveMessage = document.querySelector('.invalid-move-message');
+
+        if (invalidMoveMessage) {
+            invalidMoveMessage.innerText = message;
+        } else {
+            console.error("Error: .invalid-move-message element not found.");
+        }
 
         setTimeout(() => {
             $('#invalid-move-modal').hide();
         }, 5000);
     });
 
+
     // show wrong turn event pop up
     socket.on('wrong-turn', function(data) {
+        validMove = false;
         $('#wrong-turn-modal').show();
         let playerColor = document.getElementById('player-color');
         playerColor.classList.remove('player-color-black', 'player-color-white');
@@ -206,10 +272,11 @@ $(document).ready(function() {
         setTimeout(() => {
             $('#wrong-turn-modal').hide();
         }, 1000);
-
     });
 
+    // show king in danger event pop up
     socket.on('king-danger', function(data) {
+        validMove = false;
         $('#king-danger-modal').show();
         let playerColor = document.getElementById('player-color');
         playerColor.classList.remove('player-color-black', 'player-color-white');
@@ -229,5 +296,5 @@ $(document).ready(function() {
         setTimeout(() => {
             $('#king-danger-modal').hide();
         }, 1000);
-    })
+    });
 });
