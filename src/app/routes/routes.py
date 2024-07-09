@@ -6,7 +6,7 @@ bp = Blueprint('main', __name__)
 
 
 # main page
-@bp.route('/')
+@bp.route('/chess')
 def public():
     from setup.startup import setup_game
     from game.validations import is_check, validateMove
