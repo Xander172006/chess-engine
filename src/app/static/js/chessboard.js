@@ -1,4 +1,34 @@
 $(document).ready(function() {
+    console.log('Document is ready');
+
+    function showStoredModal(modalId, storageKey) {
+        let shouldShow = localStorage.getItem(storageKey);
+        if (shouldShow === 'true') {
+            $(modalId).show();
+        }
+    }
+
+    // Show modals on page load if stored
+    showStoredModal('#invalid-move-modal', 'showInvalidMoveModal');
+    showStoredModal('#wrong-turn-modal', 'showWrongTurnModal');
+    showStoredModal('#king-danger-modal', 'showKingDangerModal');
+
+    // Attach click event listeners for close buttons
+    $('#close-invalid-move-modal').click(function() {
+        $('#invalid-move-modal').hide();
+        localStorage.setItem('showInvalidMoveModal', 'false');
+    });
+
+    $('#close-wrong-turn-modal').click(function() {
+        $('#wrong-turn-modal').hide();
+        localStorage.setItem('showWrongTurnModal', 'false');
+    });
+
+    $('#close-king-danger-modal').click(function() {
+        $('#king-danger-modal').hide();
+        localStorage.setItem('showKingDangerModal', 'false');
+    });
+
     const socket = io();
     let squares = document.querySelectorAll('.square');
     let moveFrom = null;
@@ -6,9 +36,9 @@ $(document).ready(function() {
     let clickCounter = 0;
     let validMove = true;
 
-    piece_symbols = [
+    const pieceSymbols = [
         '♟', '♞', '♝', '♜', '♛', '♚',
-    ]
+    ];
 
     // Retrieve and display stored notations
     let storedNotations = JSON.parse(localStorage.getItem('notations')) || [];
@@ -58,7 +88,7 @@ $(document).ready(function() {
                 });
 
                 socket.on('received-moves', function(data) {
-                    data['moves'].forEach(move => {
+                    data.moves.forEach(move => {
                         let square = $(`#square-${8 - parseInt(move[1])}-${move[0].charCodeAt(0) - 97}-frontlayer`);
                         square.addClass('highlight');
                     });
@@ -93,18 +123,33 @@ $(document).ready(function() {
                             let chessPiece = moveFrom.piece;
                             let icon = '';
 
-                            if (chessPiece == 'white_pawns' || chessPiece == 'black_pawns') {
-                                icon = piece_symbols[0];
-                            } else if (chessPiece == 'white_knights' || chessPiece == 'black_knights') {
-                                icon = piece_symbols[1];
-                            } else if (chessPiece == 'white_bishops' || chessPiece == 'black_bishops') {
-                                icon = piece_symbols[2];
-                            } else if (chessPiece == 'white_rooks' || chessPiece == 'rooks') {
-                                icon = piece_symbols[3];
-                            } else if (chessPiece == 'white_queen' || chessPiece == 'black_queen') {
-                                icon = piece_symbols[4];
-                            } else if (chessPiece == 'white_king' || chessPiece == 'black_king') {
-                                icon = piece_symbols[5];
+                            switch (chessPiece) {
+                                case 'white_pawns':
+                                case 'black_pawns':
+                                    icon = pieceSymbols[0];
+                                    break;
+                                case 'white_knights':
+                                case 'black_knights':
+                                    icon = pieceSymbols[1];
+                                    break;
+                                case 'white_bishops':
+                                case 'black_bishops':
+                                    icon = pieceSymbols[2];
+                                    break;
+                                case 'white_rooks':
+                                case 'black_rooks':
+                                    icon = pieceSymbols[3];
+                                    break;
+                                case 'white_queen':
+                                case 'black_queen':
+                                    icon = pieceSymbols[4];
+                                    break;
+                                case 'white_king':
+                                case 'black_king':
+                                    icon = pieceSymbols[5];
+                                    break;
+                                default:
+                                    break;
                             }
 
                             let moveNotation = `${icon}${moveTo.notation}`;
@@ -197,18 +242,33 @@ $(document).ready(function() {
             let chessPiece = data.name;
             let icon = '';
 
-            if (chessPiece == 'white_pawns' || chessPiece == 'black_pawns') {
-                icon = piece_symbols[0];
-            } else if (chessPiece == 'white_knights' || chessPiece == 'black_knights') {
-                icon = piece_symbols[1];
-            } else if (chessPiece == 'white_bishops' || chessPiece == 'black_bishops') {
-                icon = piece_symbols[2];
-            } else if (chessPiece == 'white_rooks' || chessPiece == 'rooks') {
-                icon = piece_symbols[3];
-            } else if (chessPiece == 'white_queen' || chessPiece == 'black_queen') {
-                icon = piece_symbols[4];
-            } else if (chessPiece == 'white_king' || chessPiece == 'black_king') {
-                icon = piece_symbols[5];
+            switch (chessPiece) {
+                case 'white_pawns':
+                case 'black_pawns':
+                    icon = pieceSymbols[0];
+                    break;
+                case 'white_knights':
+                case 'black_knights':
+                    icon = pieceSymbols[1];
+                    break;
+                case 'white_bishops':
+                case 'black_bishops':
+                    icon = pieceSymbols[2];
+                    break;
+                case 'white_rooks':
+                case 'black_rooks':
+                    icon = pieceSymbols[3];
+                    break;
+                case 'white_queen':
+                case 'black_queen':
+                    icon = pieceSymbols[4];
+                    break;
+                case 'white_king':
+                case 'black_king':
+                    icon = pieceSymbols[5];
+                    break;
+                default:
+                    break;
             }
 
             let notation = `${icon}${data.placement}`;
@@ -231,10 +291,6 @@ $(document).ready(function() {
         validMove = false;
         $('#invalid-move-modal').show();
 
-        $('#close-invalid-move-modal').on('click', function() {
-            $('#invalid-move-modal').hide();
-        });
-
         let message = data.message || "Invalid move.";
         let invalidMoveMessage = document.querySelector('.invalid-move-message');
 
@@ -246,7 +302,10 @@ $(document).ready(function() {
 
         setTimeout(() => {
             $('#invalid-move-modal').hide();
+            localStorage.setItem('showInvalidMoveModal', 'false');
         }, 5000);
+
+        localStorage.setItem('showInvalidMoveModal', 'true');
     });
 
     // Show wrong turn event pop up
@@ -264,13 +323,12 @@ $(document).ready(function() {
             playerColor.classList.add('player-color-white');
         }
 
-        $('#close-wrong-turn-modal').on('click', function() {
-            $('#wrong-turn-modal').hide();
-        });
-
         setTimeout(() => {
             $('#wrong-turn-modal').hide();
+            localStorage.setItem('showWrongTurnModal', 'false');
         }, 1000);
+
+        localStorage.setItem('showWrongTurnModal', 'true');
     });
 
     // Show king in danger event pop up
@@ -288,12 +346,11 @@ $(document).ready(function() {
             playerColor.classList.add('player-color-white');
         }
 
-        $('#close-king-danger-modal').on('click', function() {
-            $('#king-danger-modal').hide();
-        });
-
         setTimeout(() => {
             $('#king-danger-modal').hide();
+            localStorage.setItem('showKingDangerModal', 'false');
         }, 1000);
+
+        localStorage.setItem('showKingDangerModal', 'true');
     });
 });

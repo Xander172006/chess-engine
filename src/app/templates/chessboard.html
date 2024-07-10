@@ -4,25 +4,25 @@
 
 {% block content %}
 <main class="chessboard-page-container">
-
-    <div>
+    <div class="main-container-chessboard">
+        <!-- players turn -->
         <section class="game-state-container">
             <div class="players-turn">
-                <!-- players turn -->
                 <h1>It is <strong id="turn">{{ player_turn }}</strong> turn</h1>
             </div>
         </section>
 
+        <!-- chessboard -->
         <section class="chessboard-section-container">
             <div class="chessboard-container">
-                <!-- chessboard numberline -->
+                <!-- board numberline -->
                 <div class="numberline">
                     {% for row in range(8, 0, -1) %}
                     <div class="number">{{ row }}</div>
                     {% endfor %}
                 </div>
 
-                <!-- chessboard -->
+                <!-- board -->
                 <div class="chessboard">
                     {% for row in range(8) %}
                     <!-- rows -->
@@ -51,21 +51,22 @@
                 </div>
             </div>
 
-            <!-- chessboard letterline -->
+            <!-- board letterline -->
             <div class="letterline">
                 {% for letter in 'abcdefgh' %}
                 <div class="letter">{{ letter }}</div>
                 {% endfor %}
             </div>
         </section>
+
+        <!-- pop-up messages -->
+        <section class="popup-messages">
+            {% include 'components/message-displays.html' %}
+        </section>
     </div>
-
     
-    <section>
-        {% include 'components/message-displays.html' %}
-    </section>
-
-
+    
+    <!-- chessboard notations  -->
     <section class="game-statistics-container">
         <div class="list-container">
             <ul id="list-notations">
@@ -82,6 +83,5 @@
             </button>
         </div>
     </section>
-    
 </main>
 {% endblock %}
