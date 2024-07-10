@@ -1,7 +1,7 @@
 <!-- Invalid move -->
 <div id="invalid-move-modal" style="display: none;">
     <div class="modal-content">
-        <span id="close-modal">&times;</span>
+        <button type="button" class="hide-message-button" id="close-invalid-move-modal">&times;</button>
         <p class="invalid-move-message">Invalid move</p>
     </div>
 </div>
@@ -9,15 +9,15 @@
 <!-- Wrong turn -->
 <div id="wrong-turn-modal" style="display: none;">
     <div class="modal-content">
-        <span id="close-wrong-turn-modal">&times;</span>
-        <p>It's not your turn! Please wait for <span id="player-color"></span> to make a move.</p>
+        <button type="button" class="hide-message-button" id="close-wrong-turn-modal">&times;</button>
+        <p>It's not your turn! Please wait for <span id="player-color"></span> to make a move</p>
     </div>
 </div>
 
-<!-- king danger -->
+<!-- King danger -->
 <div id="king-danger-modal" style="display: none;">
     <div class="modal-content">
-        <span id="close-king-danger-modal">&times;</span>
-        <p>The <span id="player-color"></span> king is in check.</p>
+        <button type="button" class="hide-message-button" id="close-king-danger-modal">&times;</button>
+        <p>The <span id="player-color"></span> king is in check</p>
     </div>
 </div>

@@ -15,6 +15,12 @@ body {
     height: 80%;
 }
 
+.main-container-chessboard {
+    position: relative;
+    width: 100%;
+    height: 100%;   
+}
+
 .game-state-container {
     margin-bottom: auto;
 }
@@ -154,22 +160,45 @@ body {
     position: absolute;
 }
 
-#invalid-move-modal, #wrong-turn-modal, #king-danger-modal {
+.popup-messages {
     position: absolute;
-    color: red;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 2;
-    font-size: 1.5rem;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: rgb(0, 86, 92);
-    border-radius: 0.5rem;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+
+#invalid-move-modal, #wrong-turn-modal, #king-danger-modal {
+    background-color: rgba(146, 159, 204, 0.9);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    opacity: 0.7;
+    text-align: center;
+    color: rgb(198, 2, 2);
+    padding: 0.1rem 0.75rem;
+    border-radius: 10px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 1.1rem;
 }
 
 .modal-content {
     display: flex;
     justify-content: center;
+    flex-direction: row;
     gap: 1rem;
     align-items: center;
+}
+
+.hide-message-button {
+    border: none;
+    background: none;
+    color: rgb(198, 2, 2);
+    font-weight: bold;
+    font-size: 2.5rem;
+    align-self: center;
+    z-index: 100;
 }
 
 .modal-content > span {
@@ -182,7 +211,7 @@ body {
 }
 
 .player-color-white {
-    color: rgb(221, 221, 221);
+    color: rgb(255, 255, 255);
     font-weight: bold;
 }
 
