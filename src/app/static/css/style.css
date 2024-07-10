@@ -215,12 +215,37 @@ body {
     height: 100%;
 }
 
-.reset-board-btn {
+
+.reset-button-container {
     align-self: flex-end;
     margin-top: auto;
     margin-bottom: 1rem;
     margin-right: 1rem;
 }
+
+.resign-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.reset-board-btn {
+    background: none;
+    border: none;
+    color: white;
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.reset-board-btn:hover {
+    cursor: pointer;
+    color: rgb(201, 201, 201);
+}
+
+
 
 /* div */
 .list-container {
@@ -228,7 +253,22 @@ body {
     overflow: hidden; 
     box-sizing: border-box;
     padding: 10px;
+    overflow-y: auto;
+    max-height: 92.5%;
 }
+
+
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #334855;
+    border-top-right-radius: 5px;
+}
+
+
 
 /* ul */
 #list-notations {
@@ -242,6 +282,7 @@ body {
     padding: 0; 
     box-sizing: border-box;
     counter-reset: notation-counter; 
+    max-height: max-content;
 }
 
 /* li */
@@ -265,8 +306,6 @@ body {
 }
 
 
-
-
 /* li < element */
 #list-notations > li:nth-child(odd) {
     padding-left: 3em;
@@ -278,8 +317,6 @@ body {
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
 }
-
-
 
 
 /* element > li */
