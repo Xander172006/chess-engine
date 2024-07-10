@@ -24,19 +24,58 @@ Chess is one of my biggest passions along with programming, therefore I decided 
 
 ## How to get started?
 
-1. Clone the repository
+1. **Clone the repository**
 
     ```bash
     git clone https://github.com/Xander172006/chess-engine.git
     ```
 
-2. Install the dependencies
+2. **Navigate to the Project `src` directory**
+
+    ```bash
+    cd chess-engine/src
+    ```
+
+3. **Install the dependencies**
 
     ```bash
     pip install -r requirements.txt
 
-    # includes:
-    # Python 3.12.0
-    # Flask version: 2.0.1
-    # Jinja version: 3.0.1
+    # Python 3.11.4
+    # Flask 2.0.1
+    # Jinja 3.0.2
+    # Numpy 1.26.4
     ```
+
+4. **Run the application**
+
+    ```bash
+    python app/app.py
+    ```
+
+
+## Usage guide
+
+### _How to play?_
+
+By default there will be a session to keep track of the current game state, player turns as well as the captured pieces by both sides.
+Following the rules of chess, you can learn more about it [`here`](https://en.wikipedia.org/wiki/Chess).
+
+To make a move, you have to select the piece you want to move and then follow it up with a designated square to move to. The game will automatically update the board accordingly.
+
+
+https://github.com/Xander172006/chess-engine/assets/136751241/c3fffe12-6834-4932-b82f-b617ec7258c8
+
+
+
+## Contributors
+
+![Xander Poggenklaas](https://img.shields.io/badge/Xander_Poggenklaas-Developer-blue)
+
+[<img src="https://github.com/Xander172006.png" width="65px" height="65px" style="border-radius: 50px"/>](Xander172006)
+
+**Location:** Bit Academy, Amsterdam
+</br>
+**Email:** xanderpoggenklaas@gmail.com
+</br>
+**Twitter:** [@Xander17Gamer](https://x.com/Xander17Gamer)

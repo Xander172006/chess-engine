@@ -12,6 +12,7 @@ def validateMove(action, moves, game_state, occupied):
     global WHITE_PAWNS, BLACK_PAWNS, WHITE_KNIGHTS, BLACK_KNIGHTS, WHITE_BISHOPS, BLACK_BISHOPS, WHITE_ROOKS, BLACK_ROOKS, WHITE_QUEEN, BLACK_QUEEN, WHITE_KING, BLACK_KING
     message = ""
     is_legal = False
+    captured_piece = None
 
     global piece_mapping
     piece_mapping = {
@@ -90,7 +91,6 @@ def validateMove(action, moves, game_state, occupied):
         game_state[f"{action['name'].upper()}"] ^= bitboard_pos
         game_state[f"{action['name'].upper()}"] |= bitboard_dest
 
-        # print(is_check(game_state, piece_mapping, occupied, action['color']))
         # check for capture event
         if enemy_pieces & bitboard_dest:
             for piece, variable in piece_mapping[enemy_color].items():
@@ -103,9 +103,12 @@ def validateMove(action, moves, game_state, occupied):
                     # store captured pieces
                     session['store_pieces']['white'].append(piecename) if enemy_color == 'white' else session['store_pieces']['black'].append(piecename)
                     session.modified = True
+
+                    captured_piece = piecename
                     break
 
-    return is_legal, message
+    return is_legal, message, captured_piece
+
 
 
 
@@ -113,6 +116,7 @@ def validateMove(action, moves, game_state, occupied):
 def is_legal_move(legal_moves, my_move):
     result = [[legal_moves[row][col] & my_move[row][col] for col in range(8)] for row in range(8)]
     return result == my_move
+
 
 
 def is_check(game_state, occupied, color):

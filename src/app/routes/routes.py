@@ -6,7 +6,7 @@ bp = Blueprint('main', __name__)
 
 
 # main page
-@bp.route('/')
+@bp.route('/chess')
 def public():
     from setup.startup import setup_game
     from game.validations import is_check, validateMove
@@ -56,7 +56,7 @@ def create_move():
 
     # Validate move on generated moves
     if game_state and player_turn == action['color']:
-        validation, message = validateMove(action, moves, game_state, occupied)
+        validation, message, captured_piece = validateMove(action, moves, game_state, occupied)
         if validation:
             # create a replica to test the move
             temp_game_state = game_state.copy()
@@ -87,14 +87,33 @@ def create_move():
             session.modified = True
             
             # Emit move-made event
-            socketio.emit('move-made', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
-
+            socketio.emit('move-made', {
+                    'position': action['position'],
+                    'placement': action['placement'],
+                    'name': action['name'],
+                    'color': action['color'],
+                    'captured_piece': captured_piece
+                }
+            )
         else:
-            # Invalid move due to general validation (not related to putting king in check)
-            socketio.emit('invalid-move', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color'], 'message': message})
+            # Invalid move 
+            socketio.emit('invalid-move', {
+                'position': action['position'], 
+                'placement': action['placement'], 
+                'name': action['name'], 
+                'color': action['color'], 
+                'message': message
+                }
+            )
     else:
         # Wrong turn
-        socketio.emit('wrong-turn', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
+        socketio.emit('wrong-turn', {
+            'position': action['position'], 
+            'placement': action['placement'], 
+            'name': action['name'], 
+            'color': action['color']
+            }
+        )
 
     return ('', 204)
 
