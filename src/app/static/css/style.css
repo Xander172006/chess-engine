@@ -29,15 +29,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    color: white;
+    color: #a9b6d7;
     width: 80%;
     margin: 0 auto;
-    background: rgb(89, 124, 129);
+    background: #1d2f3a;
     height: auto;
     font-size: 0.75rem;
     font-family: Arial, Helvetica, sans-serif;
     font-weight: 200 !important;
     margin-bottom: 1rem;
+    text-shadow: 0 0 0.5rem #89a0c9;
+    border-radius: 10px;
 }
 
 .chessboard-section-container {

@@ -58,8 +58,6 @@ def bitboard_to_square(bitboard):
     
     return squares
 
-
-# 2 dimensional array conversion (array)
 def print_bitboard(bitboard):
     board = bitboard_to_array(bitboard)
     for row in board:
