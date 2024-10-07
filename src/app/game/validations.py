@@ -187,7 +187,4 @@ class Validation:
         pass
 
 
-
-laat x gelijk aan (true) ? 1 : 2; 
-
         
