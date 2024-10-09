@@ -63,8 +63,4 @@ class devTools:
         for row in board:
             print(" ".join(str(cell) for cell in row))
 
-
-    def from_coördinates_to_position(self):
-        # example is e1 = (0, 4)
-        pass
     

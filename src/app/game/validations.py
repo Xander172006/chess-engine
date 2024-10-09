@@ -8,6 +8,8 @@ from players import playerTurnHandling
 
 # create the same code structure but with object-oriented programming
 class Validation:
+    king_has_moved = False
+
     def __init__(self, message, is_legal, captured_piece):
         global WHITE_PAWNS, BLACK_PAWNS, WHITE_KNIGHTS, BLACK_KNIGHTS, WHITE_BISHOPS, BLACK_BISHOPS, WHITE_ROOKS, BLACK_ROOKS, WHITE_QUEEN, BLACK_QUEEN, WHITE_KING, BLACK_KING
         global piece_mapping
@@ -17,7 +19,6 @@ class Validation:
         
         self.message = message
         self.is_legal = is_legal
-        self.king_has_moved = False
         self.captured_piece = captured_piece
         piece_mapping = {
             'white': {
@@ -38,9 +39,8 @@ class Validation:
             }
         }
 
-    # validate the move
+    
     def validateMove(self, action, moves, game_state, occupied):
-        # player action
         bitboard_pos = self.devTools.create_bitboard(action['position'])
         bitboard_dest = self.devTools.create_bitboard(action['placement'])
 
@@ -49,23 +49,28 @@ class Validation:
         enemy_pieces = 0
         my_pieces = 0
 
-        # place enemy pieces on bitboard
+        # place enemy pieces
         for piece, variable in piece_mapping[enemy_color].items():
             enemy_pieces |= game_state[variable]
 
-        # place my pieces on bitboard
+        # place my pieces
         for piece, variable in piece_mapping[action['color']].items():
             my_pieces |= game_state[variable]
-
-
-        temp_game_state = game_state.copy()
 
 
         # pawns
         if 'pawn' in action['name']:
             color_prefix = 'white_' if action['color'] == 'white' else 'black_'
             moves[action['name'].removeprefix(color_prefix)] = self.all_moves.generate_pawn_moves(bitboard_pos, occupied, enemy_pieces, action['color'])
-            self.is_legal = self.is_legal_move(self.devTools.bitboard_to_array(moves['pawns']), self.devTools.bitboard_to_array(bitboard_dest))
+
+            if self.all_moves.pawn_moved_2_steps & bitboard_dest:
+                session['pawn-moved-2-steps'] = action['placement']  # Store the destination square for en passant check
+                session.modified = True
+
+            if self.enPassant(action['position'], action['color'], game_state):
+                self.is_legal = True
+            else:
+                self.is_legal = self.is_legal_move(self.devTools.bitboard_to_array(moves['pawns']), self.devTools.bitboard_to_array(bitboard_dest))
         
         # knights
         if 'knight' in action['name']:
@@ -90,9 +95,8 @@ class Validation:
         # king
         if 'king' in action['name']:
             moves['king'] = self.all_moves.generate_king_moves(self.devTools.from_bitboard_to_chess_position(bitboard_pos), occupied, enemy_pieces)
-            if not self.is_check(temp_game_state, occupied, action['color']):
-                if self.king_has_moved == False:
-                    self.castlingRights(action, game_state, moves, occupied, bitboard_dest)
+            if not self.is_check(game_state, occupied, action['color']):
+                self.castlingRights(action, game_state, moves, occupied, bitboard_dest)
                     
                 
         
@@ -144,47 +148,76 @@ class Validation:
 
 
     def castlingRights(self, action, game_state, moves, occupied, bitboard_dest):
-        if action['name'] == 'white_king':
-            if action['position'] == 'e1' and action['placement'] == 'g1':
-                if game_state['WHITE_ROOKS'] & self.devTools.create_bitboard('h1') and not game_state['WHITE_KING'] & self.devTools.create_bitboard('f1'):
-                    game_state['WHITE_ROOKS'] ^= self.devTools.create_bitboard('h1')
-                    game_state['WHITE_ROOKS'] |= self.devTools.create_bitboard('f1')
-                    self.is_legal = True
-                else:
-                    self.is_legal = False
-
-            elif action['position'] == 'e1' and action['placement'] == 'c1':
-                if game_state['WHITE_ROOKS'] & self.devTools.create_bitboard('a1') and not game_state['WHITE_KING'] & self.devTools.create_bitboard('d1'):
-                    game_state['WHITE_ROOKS'] ^= self.devTools.create_bitboard('a1')
-                    game_state['WHITE_ROOKS'] |= self.devTools.create_bitboard('d1')
-                    self.is_legal = True
-                else:
-                    self.is_legal = False
+        king_positions = {
+            'white_king': ('e1', 'white_king_has_moved', 'WHITE_ROOKS', 'WHITE_KING'),
+            'black_king': ('e8', 'black_king_has_moved', 'BLACK_ROOKS', 'BLACK_KING')
+        }
+        
+        if action['name'] in king_positions:
+            king_pos, king_moved, rooks, king = king_positions[action['name']]
+            
+            if action['position'] == king_pos and not game_state[king_moved]:
+                if action['placement'] == 'g' + king_pos[1]:
+                    # Check that f1 and g1 (or f8 and g8 for black) are empty for kingside castling
+                    if game_state[rooks] & self.devTools.create_bitboard('h' + king_pos[1]) and \
+                    not game_state[king] & self.devTools.create_bitboard('f' + king_pos[1]) and \
+                    not occupied & self.devTools.create_bitboard('f' + king_pos[1]) and \
+                    not occupied & self.devTools.create_bitboard('g' + king_pos[1]):
+                        game_state[rooks] ^= self.devTools.create_bitboard('h' + king_pos[1])
+                        game_state[rooks] |= self.devTools.create_bitboard('f' + king_pos[1])
+                        game_state[king_moved] = True
+                        self.is_legal = True
+                
+                elif action['placement'] == 'c' + king_pos[1]:
+                    # Check that b1, c1, and d1 (or b8, c8, d8 for black) are empty for queenside castling
+                    if game_state[rooks] & self.devTools.create_bitboard('a' + king_pos[1]) and \
+                    not game_state[king] & self.devTools.create_bitboard('d' + king_pos[1]) and \
+                    not occupied & self.devTools.create_bitboard('b' + king_pos[1]) and \
+                    not occupied & self.devTools.create_bitboard('c' + king_pos[1]) and \
+                    not occupied & self.devTools.create_bitboard('d' + king_pos[1]):
+                        game_state[rooks] ^= self.devTools.create_bitboard('a' + king_pos[1])
+                        game_state[rooks] |= self.devTools.create_bitboard('d' + king_pos[1])
+                        game_state[king_moved] = True
+                        self.is_legal = True
             else:
                 self.is_legal = self.is_legal_move(self.devTools.bitboard_to_array(moves['king']), self.devTools.bitboard_to_array(bitboard_dest))
+                game_state[king_moved] = True
 
-        elif action['name'] == 'black_king': 
-            if action['position'] == 'e8' and action['placement'] == 'g8':
-                if game_state['BLACK_ROOKS'] & self.devTools.create_bitboard('h8') and not game_state['BLACK_KING'] & self.devTools.create_bitboard('f8'):
-                    game_state['BLACK_ROOKS'] ^= self.devTools.create_bitboard('h8')
-                    game_state['BLACK_ROOKS'] |= self.devTools.create_bitboard('f8')
-                    self.is_legal = True
+
+
+
+    def enPassant(self, move, color, game_state):
+        last_pawn_move = session.get('pawn-moved-2-steps')
+
+        if last_pawn_move:
+            # Determine which rank the captured pawn is on
+            captured_pawn_rank = '5' if color == 'white' else '4'
+            destination_rank = '6' if color == 'white' else '3'
+
+            if move[1] == last_pawn_move[1] and abs(ord(move[0]) - ord(last_pawn_move[0])) == 1:
+                # Position of the captured pawn
+                captured_pawn_pos = last_pawn_move[0] + captured_pawn_rank
+                captured_pawn_bitboard = self.devTools.create_bitboard(captured_pawn_pos)
+
+                # Remove the captured pawn from the game state
+                if color == 'white':
+                    game_state['BLACK_PAWNS'] ^= captured_pawn_bitboard  # Remove black pawn
+                    piecename = 'pawn'
+                    session['store_pieces']['white'].append(piecename)  # Store captured piece
                 else:
-                    self.is_legal = False
-                    
-            elif action['position'] == 'e8' and action['placement'] == 'c8':
-                if game_state['BLACK_ROOKS'] & self.devTools.create_bitboard('a8') and not game_state['BLACK_KING'] & self.devTools.create_bitboard('d8'):
-                    game_state['BLACK_ROOKS'] ^= self.devTools.create_bitboard('a8')
-                    game_state['BLACK_ROOKS'] |= self.devTools.create_bitboard('d8')
-                    self.is_legal = True
-                else:
-                    self.is_legal = False
-            else:
-                self.is_legal = self.is_legal_move(self.devTools.bitboard_to_array(moves['king']), self.devTools.bitboard_to_array(bitboard_dest))
+                    game_state['WHITE_PAWNS'] ^= captured_pawn_bitboard  # Remove white pawn
+                    piecename = 'pawn'
+                    session['store_pieces']['black'].append(piecename)  # Store captured piece
+
+                session.modified = True
+                return True
+
+        return False
 
 
-    def enPassant():
+    def can_promote():
         pass
+
 
 
         

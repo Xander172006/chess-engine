@@ -5,6 +5,7 @@ from devTools import devTools
 class MovesGeneration:
     def __init__(self):
         self.moves = {}
+        self.pawn_moved_2_steps = 0
 
 
     def generate_all_moves(self, pieces, occupied, color):
@@ -38,6 +39,8 @@ class MovesGeneration:
             double_step = ((single_step & 0x0000FF0000000000) >> 8) & ~occupied
             capture_left = (pawns >> 9) & enemy_pieces & ~0x0101010101010101
             capture_right = (pawns >> 7) & enemy_pieces & ~0x8080808080808080
+
+        self.pawn_moved_2_steps = double_step
 
         moves |= single_step | double_step | capture_left | capture_right
         return moves

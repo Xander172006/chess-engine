@@ -23,9 +23,14 @@ class Startup:
                 'BLACK_BISHOPS': devTools().BLACK_BISHOPS,
                 'BLACK_ROOKS': devTools().BLACK_ROOKS,
                 'BLACK_QUEEN': devTools().BLACK_QUEEN,
-                'BLACK_KING': devTools().BLACK_KING
+                'BLACK_KING': devTools().BLACK_KING,
+
+                'white_king_has_moved': False,
+                'black_king_has_moved': False
             }
             session['store_pieces'] = {'white': [], 'black': []}
+
+            session['pawn-moved-2-steps'] = None
             session.modified = True
 
         # get pieces
