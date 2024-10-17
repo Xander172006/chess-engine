@@ -1,4 +1,5 @@
 from devTools import devTools
+from flask import session
 
 
 # create the same code logic as above but with object-oriented programming
@@ -6,13 +7,15 @@ class MovesGeneration:
     def __init__(self):
         self.moves = {}
         self.pawn_moved_2_steps = 0
+        self.devTools = devTools()
 
 
     def generate_all_moves(self, pieces, occupied, color):
         enemy_color = "black" if color == "white" else "white"
         enemy_pieces = (pieces[f"{enemy_color}_pawns"] | pieces[f"{enemy_color}_knights"] | 
-                        pieces[f"{enemy_color}_bishops"] | pieces[f"{enemy_color}_rooks"] | 
-                        pieces[f"{enemy_color}_queen"] | pieces[f"{enemy_color}_king"])
+               pieces[f"{enemy_color}_bishops"] | pieces[f"{enemy_color}_rooks"] | 
+               pieces[f"{enemy_color}_queen"] | pieces[f"{enemy_color}_king"])
+
         
         self.moves['pawns'] = self.generate_pawn_moves(pieces['pawns'], occupied, enemy_pieces, color)
         self.moves['knights'] = self.generate_knight_moves(pieces['knights'], occupied, enemy_pieces)
@@ -23,27 +26,47 @@ class MovesGeneration:
 
         return self.moves
     
+    
 
     def generate_pawn_moves(self, pawns, occupied, enemy_pieces, color):
-        # moveset: move 1 or 2 squares forward, capture diagonally
-        moves = 0
+        legal_moves = 0
+
 
         if color == "white":
-            single_step = (pawns << 8) & ~occupied
-            double_step = ((single_step & 0x0000000000FF0000) << 8) & ~occupied
-            capture_left = (pawns << 7) & enemy_pieces & ~0x0101010101010101
-            capture_right = (pawns << 9) & enemy_pieces & ~0x8080808080808080
+            enemy_pieces2 = (session['game_state']['BLACK_PAWNS'] | session['game_state']['BLACK_KNIGHTS'] |
+                             session['game_state']['BLACK_BISHOPS'] | session['game_state']['BLACK_ROOKS'] |
+                            session['game_state']['BLACK_QUEEN'] | session['game_state']['BLACK_KING']
+                            )
+            
+            single_move = (pawns << 8) & ~occupied
+            double_move = ((single_move & 0x0000000000FF0000) << 8) & ~occupied
 
+            capture_left = (pawns << 7) & enemy_pieces2 & ~0x8080808080808080  # Capture diagonally left
+            capture_right = (pawns << 9) & enemy_pieces2 & ~0x0101010101010101
+            
+            legal_moves |= single_move | double_move | capture_left | capture_right
+
+            return legal_moves
         elif color == "black":
-            single_step = (pawns >> 8) & ~occupied
-            double_step = ((single_step & 0x0000FF0000000000) >> 8) & ~occupied
-            capture_left = (pawns >> 9) & enemy_pieces & ~0x0101010101010101
-            capture_right = (pawns >> 7) & enemy_pieces & ~0x8080808080808080
+            enemy_pieces2 = (session['game_state']['WHITE_PAWNS'] | session['game_state']['WHITE_KNIGHTS'] |
+                                session['game_state']['WHITE_BISHOPS'] | session['game_state']['WHITE_ROOKS'] |
+                                session['game_state']['WHITE_QUEEN'] | session['game_state']['WHITE_KING']
+                                )
+            
+            single_move = (pawns >> 8) & ~occupied
+            double_move = ((single_move & 0x0000FF0000000000) >> 8) & ~occupied
 
-        self.pawn_moved_2_steps = double_step
+            capture_left = (pawns >> 7) & enemy_pieces2 & ~0x0101010101010101
+            capture_right = (pawns >> 9) & enemy_pieces2 & ~0x8080808080808080
 
-        moves |= single_step | double_step | capture_left | capture_right
-        return moves
+            legal_moves |= single_move | double_move | capture_left | capture_right
+
+            return legal_moves
+
+
+
+
+
 
 
 

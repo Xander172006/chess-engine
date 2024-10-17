@@ -46,7 +46,6 @@ class chessGame:
 
         socketio = current_app.extensions['socketio']
 
-
         # validate move
         if game_state and player_turn == action['color']:
             validation, message, captured_piece = self.validation.validateMove(action, self.chessResources.moves, game_state, self.chessResources.occupied)
@@ -57,11 +56,9 @@ class chessGame:
                 bitboard_pos = self.devTools.create_bitboard(action['position'])
                 bitboard_dest = self.devTools.create_bitboard(action['placement'])
 
-
                 temp_game_state[action['name'].upper()] ^= bitboard_pos
                 temp_game_state[action['name'].upper()] |= bitboard_dest
                 temp_game_state[action['name'].upper()] ^= bitboard_pos
-
 
                 occupied = (temp_game_state['WHITE_PAWNS'] | temp_game_state['WHITE_KNIGHTS'] | temp_game_state['WHITE_BISHOPS'] | temp_game_state['WHITE_ROOKS'] | 
                             temp_game_state['WHITE_QUEEN'] | temp_game_state['WHITE_KING'] | temp_game_state['BLACK_PAWNS'] | temp_game_state['BLACK_KNIGHTS'] | 
@@ -76,15 +73,28 @@ class chessGame:
                 session['turn_count'] = turn_count + 1
                 session['player_turn'] = 'black' if player_turn == 'white' else 'white'
                 session.modified = True
-                
-                socketio.emit('move-made', {
-                        'position': action['position'],
-                        'placement': action['placement'],
-                        'name': action['name'],
-                        'color': action['color'],
-                        'captured_piece': captured_piece
-                    }
-                )
+
+                # check for pawn promotion
+                if 'pawn' in action['name'] and (bitboard_dest & 0xFF00000000000000 or bitboard_dest & 0x00000000000000FF):
+                    socketio.emit('pawn-promotion', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
+                    return ('', 204)
+                else:
+                    castling = None
+                    if 'king' in action['name']:
+                        if action['placement'] == 'g1' or action['placement'] == 'g8':
+                            castling = 'kingside'
+                        elif action['placement'] == 'c1' or action['placement'] == 'c8':
+                            castling = 'queenside'
+
+                    socketio.emit('move-made', {
+                            'position': action['position'],
+                            'placement': action['placement'],
+                            'name': action['name'],
+                            'color': action['color'],
+                            'captured_piece': captured_piece,
+                            'castling': castling
+                        }
+                    )
             else:
                 # Invalid move 
                 socketio.emit('invalid-move', {

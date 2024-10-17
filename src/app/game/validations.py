@@ -63,6 +63,8 @@ class Validation:
             color_prefix = 'white_' if action['color'] == 'white' else 'black_'
             moves[action['name'].removeprefix(color_prefix)] = self.all_moves.generate_pawn_moves(bitboard_pos, occupied, enemy_pieces, action['color'])
 
+
+
             if self.all_moves.pawn_moved_2_steps & bitboard_dest:
                 session['pawn-moved-2-steps'] = action['placement']  # Store the destination square for en passant check
                 session.modified = True
@@ -97,7 +99,7 @@ class Validation:
             moves['king'] = self.all_moves.generate_king_moves(self.devTools.from_bitboard_to_chess_position(bitboard_pos), occupied, enemy_pieces)
             if not self.is_check(game_state, occupied, action['color']):
                 self.castlingRights(action, game_state, moves, occupied, bitboard_dest)
-                    
+
                 
         
 
@@ -106,10 +108,12 @@ class Validation:
         if self.is_legal:
             game_state[f"{action['name'].upper()}"] ^= bitboard_pos
             game_state[f"{action['name'].upper()}"] |= bitboard_dest
-
+            # print(f"game_state variable: {self.devTools.print_bitboard(game_state[action['name'].upper()])}")
             # check for capture event
             if enemy_pieces & bitboard_dest:
                 for piece, variable in piece_mapping[enemy_color].items():
+                    # print(f"bitboard_dest: {self.devTools.print_bitboard(bitboard_dest)}")
+                    # print(f"game_state variable: {self.devTools.print_bitboard(game_state[variable])}")
                     if bitboard_dest & game_state[variable]:
 
                         # remove captured piece
@@ -136,7 +140,6 @@ class Validation:
 
         enemy_pieces = playerTurnHandling(game_state, enemy_color)
         enemy_moves = MovesGeneration().generate_all_moves(enemy_pieces, occupied, enemy_color)
-        my_moves = MovesGeneration().generate_all_moves(playerTurnHandling(game_state, color), occupied, color)
 
         # Check if the king's position is in the enemy's move set
         return (king_pos & enemy_moves['queen']) != 0 or \
@@ -179,6 +182,9 @@ class Validation:
                         game_state[rooks] |= self.devTools.create_bitboard('d' + king_pos[1])
                         game_state[king_moved] = True
                         self.is_legal = True
+                else:
+                    self.is_legal = self.is_legal_move(self.devTools.bitboard_to_array(moves['king']), self.devTools.bitboard_to_array(bitboard_dest))
+                    game_state[king_moved] = True
             else:
                 self.is_legal = self.is_legal_move(self.devTools.bitboard_to_array(moves['king']), self.devTools.bitboard_to_array(bitboard_dest))
                 game_state[king_moved] = True
@@ -194,23 +200,27 @@ class Validation:
             captured_pawn_rank = '5' if color == 'white' else '4'
             destination_rank = '6' if color == 'white' else '3'
 
+
             if move[1] == last_pawn_move[1] and abs(ord(move[0]) - ord(last_pawn_move[0])) == 1:
                 # Position of the captured pawn
                 captured_pawn_pos = last_pawn_move[0] + captured_pawn_rank
                 captured_pawn_bitboard = self.devTools.create_bitboard(captured_pawn_pos)
 
+
                 # Remove the captured pawn from the game state
                 if color == 'white':
-                    game_state['BLACK_PAWNS'] ^= captured_pawn_bitboard  # Remove black pawn
+                    game_state['BLACK_PAWNS'] &= ~captured_pawn_bitboard 
                     piecename = 'pawn'
                     session['store_pieces']['white'].append(piecename)  # Store captured piece
                 else:
-                    game_state['WHITE_PAWNS'] ^= captured_pawn_bitboard  # Remove white pawn
+                    game_state['WHITE_PAWNS'] &= ~captured_pawn_bitboard 
                     piecename = 'pawn'
                     session['store_pieces']['black'].append(piecename)  # Store captured piece
 
                 session.modified = True
                 return True
+            else:
+                return False
 
         return False
 

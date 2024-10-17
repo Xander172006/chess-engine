@@ -33,6 +33,36 @@ def from_bitboard_to_chess_position(bitboard):
     col = position % 8
     return (row, col)
 
+
+def generate_pawn_moves(white_pawns, occupied, enemy_pieces):
+    legal_moves = 0
+    
+
+
+    # Single move forward
+    single_move = (white_pawns << 8) & ~occupied  # Move forward one square
+    
+    # Double move forward (only for pawns on rank 2)
+    double_move = ((white_pawns & 0x0000000000FF0000) << 8) & ~occupied  # Move forward two squares
+    
+    # Capture moves (diagonal left and diagonal right)
+    capture_left = (white_pawns << 7) & enemy_pieces & ~0x0101010101010101  # Capture diagonally left (to a5)
+    capture_right = (white_pawns << 9) & enemy_pieces & ~0x8080808080808080  # Capture diagonally right
+    
+    # Combine all legal pawn moves
+    legal_moves |= single_move | double_move | capture_left | capture_right
+    
+    return legal_moves
+
+
+
+
+
+
+
+
+
+
 def generate_bishop_moves(bishops, occupied, enemy_pieces):
     directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
     legal_moves = 0
@@ -130,32 +160,42 @@ BLACK_ROOKS = 0x8100000000000000
 BLACK_QUEEN = 0x0800000000000000
 BLACK_KING = 0x1000000000000000
 
-white_queen_moves = [
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 0, 1],
-    [0, 0, 0, 0, 0, 0, 1, 1],
-    [0, 0, 0, 0, 1, 1, 1, 0],
-    [0, 0, 0, 0, 0, 0, 1, 1],
-    [0, 0, 0, 0, 0, 1, 0, 1],
-    [0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0]
-]
+
+def clear_bit(bitboard, position):
+    return bitboard & ~(1 << position)
 
 
-black_king_position = [
-    [0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0]
-]
+def create_bitboard(square):
+    file = ord(square[0]) - ord('a')
+    rank = int(square[1]) - 1
+    return 1 << (rank * 8 + file)
+
+def set_bit(bitboard, position):
+    return bitboard | (1 << position)
+
+
+e2_position = create_bitboard('e2').bit_length() - 1
+e4_position = create_bitboard('e4').bit_length() - 1
+
+# Set white pawn on e2 to e4
+WHITE_PAWNS = clear_bit(WHITE_PAWNS, e2_position)
+WHITE_PAWNS = set_bit(WHITE_PAWNS, e4_position)
+
+
+# set black pawn on e7 to e5
+BLACK_PAWNS = clear_bit(BLACK_PAWNS, create_bitboard('e7').bit_length() - 1)
+BLACK_PAWNS = set_bit(BLACK_PAWNS, create_bitboard('e5').bit_length() - 1)
+
+
+# set white pawn on f2 to f4
+WHITE_PAWNS = clear_bit(WHITE_PAWNS, create_bitboard('f2').bit_length() - 1)
+WHITE_PAWNS = set_bit(WHITE_PAWNS, create_bitboard('f4').bit_length() - 1)
 
 
 
-
+# set black queen to h4
+BLACK_QUEEN = clear_bit(BLACK_QUEEN, create_bitboard('d8').bit_length() - 1)
+BLACK_QUEEN = set_bit(BLACK_QUEEN, create_bitboard('h4').bit_length() - 1)
 
 
 occupied = (WHITE_PAWNS | BLACK_PAWNS | WHITE_KNIGHTS | BLACK_KNIGHTS |
@@ -163,7 +203,21 @@ occupied = (WHITE_PAWNS | BLACK_PAWNS | WHITE_KNIGHTS | BLACK_KNIGHTS |
             WHITE_QUEEN | BLACK_QUEEN | WHITE_KING | BLACK_KING)
 
 
-print_bitboard(occupied)
-
 enemy_pieces = (BLACK_PAWNS | BLACK_KNIGHTS | BLACK_BISHOPS |
                 BLACK_ROOKS | BLACK_QUEEN | BLACK_KING)
+
+
+# board state
+print("Board state:")
+print(print_bitboard(occupied), end="\n\n")
+
+
+
+
+# generate white king moves:
+king = from_bitboard_to_chess_position(WHITE_KING)
+print("White king moves:")
+print_bitboard(generate_king_moves(king, occupied, enemy_pieces))
+
+
+

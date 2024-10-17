@@ -362,3 +362,7 @@ body {
     color: white;
     padding-left: 0.5rem;
 }
+
+.pawn-promotion {
+    color: white;
+}

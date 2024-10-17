@@ -74,4 +74,6 @@ class chessResources:
                     moves = move_generator(self.devTools.from_bitboard_to_chess_position(position_bitboard), self.occupied, enemy_pieces)
                 break
 
+
+                    
         return self.devTools.bitboard_to_square(moves)

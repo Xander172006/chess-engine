@@ -120,51 +120,22 @@ $(document).ready(function() {
                     }),
                     success: function(response) {
                         if (validMove) {
-                            let chessPiece = moveFrom.piece;
-                            let icon = '';
-
-                            switch (chessPiece) {
-                                case 'white_pawns':
-                                case 'black_pawns':
-                                    icon = pieceSymbols[0];
-                                    break;
-                                case 'white_knights':
-                                case 'black_knights':
-                                    icon = pieceSymbols[1];
-                                    break;
-                                case 'white_bishops':
-                                case 'black_bishops':
-                                    icon = pieceSymbols[2];
-                                    break;
-                                case 'white_rooks':
-                                case 'black_rooks':
-                                    icon = pieceSymbols[3];
-                                    break;
-                                case 'white_queen':
-                                case 'black_queen':
-                                    icon = pieceSymbols[4];
-                                    break;
-                                case 'white_king':
-                                case 'black_king':
-                                    icon = pieceSymbols[5];
-                                    break;
-                                default:
-                                    break;
-                            }
-
-                            let moveNotation = `${icon}${moveTo.notation}`;
-                            storedNotations.push(moveNotation);
-                            localStorage.setItem('notations', JSON.stringify(storedNotations));
-
-                            let list_notations = document.getElementById('list-notations');
-                            let li = document.createElement('li');
-                            li.innerText = moveNotation;
-                            list_notations.appendChild(li);
+                            // Move the piece in the DOM
+                            let fromSquare = $(`#square-${8 - parseInt(moveFrom.notation[1])}-${moveFrom.notation[0].charCodeAt(0) - 97}`);
+                            let toSquare = $(`#square-${8 - parseInt(moveTo.notation[1])}-${moveTo.notation[0].charCodeAt(0) - 97}`);
+                            let piece = fromSquare.find('.piece');
+                            
+                            setTimeout(() => {
+                                piece.attr('data-piece-name', moveFrom.piece);
+                                piece.attr('data-piece-color', moveFrom.color);
+                    
+                                piece.detach().css({ transform: '' });
+                                toSquare.append(piece);
+                    
+                                // remove highlights
+                                $('.highlight').removeClass('highlight');
+                            }, 500);
                         }
-
-                        setTimeout(() => {
-                            location.reload();
-                        }, 500);
                     },
                     error: function(xhr, status, error) {
                         console.error("Error:", error);
@@ -190,7 +161,7 @@ $(document).ready(function() {
                 }
             }
         }
-    }
+    }    
 
     // Reset the board
     $('#reset-board-btn').on('click', function() {
@@ -222,26 +193,51 @@ $(document).ready(function() {
     socket.on('move-made', function(data) {
         let fromSquare = $(`#square-${8 - parseInt(data.position[1])}-${data.position[0].charCodeAt(0) - 97}`);
         let toSquare = $(`#square-${8 - parseInt(data.placement[1])}-${data.placement[0].charCodeAt(0) - 97}`);
-
+    
         let piece = fromSquare.find('.piece');
         let fromPosition = fromSquare.offset();
         let toPosition = toSquare.offset();
-
+    
         piece.attr('data-piece-name', data.name);
         piece.attr('data-piece-color', data.color);
-
+    
         piece.css({
             transform: `translate(${toPosition.left - fromPosition.left}px, ${toPosition.top - fromPosition.top}px)`
         });
-
+    
         setTimeout(() => {
             piece.detach().css({ transform: '' });
             toSquare.append(piece);
-
+    
+            // Handle castling move
+            if (data.castling) {
+                let rookFromSquare, rookToSquare;
+                if (data.castling === 'kingside') {
+                    rookFromSquare = $(`#square-${8 - parseInt(data.position[1])}-7`);
+                    rookToSquare = $(`#square-${8 - parseInt(data.position[1])}-5`);
+                } else if (data.castling === 'queenside') {
+                    rookFromSquare = $(`#square-${8 - parseInt(data.position[1])}-0`);
+                    rookToSquare = $(`#square-${8 - parseInt(data.position[1])}-3`);
+                }
+    
+                let rook = rookFromSquare.find('.piece');
+                let rookFromPosition = rookFromSquare.offset();
+                let rookToPosition = rookToSquare.offset();
+    
+                rook.css({
+                    transform: `translate(${rookToPosition.left - rookFromPosition.left}px, ${rookToPosition.top - rookFromPosition.top}px)`
+                });
+    
+                setTimeout(() => {
+                    rook.detach().css({ transform: '' });
+                    rookToSquare.append(rook);
+                }, 500);
+            }
+    
             // Update notation with captured piece indication
             let chessPiece = data.name;
             let icon = '';
-
+    
             switch (chessPiece) {
                 case 'white_pawns':
                 case 'black_pawns':
@@ -270,15 +266,15 @@ $(document).ready(function() {
                 default:
                     break;
             }
-
+    
             let notation = `${icon}${data.placement}`;
             if (data.captured_piece) {
                 notation += 'x';
             }
-
+    
             storedNotations.push(notation);
             localStorage.setItem('notations', JSON.stringify(storedNotations));
-
+    
             let list_notations = document.getElementById('list-notations');
             let li = document.createElement('li');
             li.innerText = notation;
@@ -352,5 +348,46 @@ $(document).ready(function() {
         }, 1000);
 
         localStorage.setItem('showKingDangerModal', 'true');
+    });
+
+    socket.on('pawn-promotion', function(data) {
+        console.log('pawn-promoting');
+        $('#pawn-promotion-modal').show(); // Show the promotion modal
+    
+        let promotionModal = document.getElementById('pawn-promotion-modal');
+        promotionModal.innerHTML = 'promotion modal'; // Replace this with the actual HTML for promotion options
+    
+        // Make sure to remove any existing setTimeouts that cause page reloads.
+        clearTimeout(reloadTimeout); // If you have a global variable reloadTimeout, clear it.
+    
+        // Add event listeners for promotion buttons
+        let promotionButtons = document.querySelectorAll('.promotion-button');
+        promotionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Handle the promotion choice and update game state
+                handlePawnPromotion(this.dataset.pieceType); // Function to handle promotion logic
+                $('#pawn-promotion-modal').hide(); // Close the modal
+                
+                // Send the promotion move to the server
+                $.ajax({
+                    type: 'POST',
+                    url: "/make_move",
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        position: data.position, // Original position of the pawn
+                        placement: data.newPosition, // New position after promotion
+                        name: this.dataset.pieceType, // The new piece type (e.g., queen, rook, etc.)
+                        color: data.color // Color of the pawn
+                    }),
+                    success: function(response) {
+                        // Handle successful move response
+                        updateBoard(response); // Ensure the board updates with the new state
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error during pawn promotion:", error);
+                    }
+                });
+            });
+        });
     });
 });
