@@ -33,33 +33,35 @@ class MovesGeneration:
 
 
         if color == "white":
-            enemy_pieces2 = (session['game_state']['BLACK_PAWNS'] | session['game_state']['BLACK_KNIGHTS'] |
-                             session['game_state']['BLACK_BISHOPS'] | session['game_state']['BLACK_ROOKS'] |
-                            session['game_state']['BLACK_QUEEN'] | session['game_state']['BLACK_KING']
-                            )
+            enemy_pieces2 = (
+                session['game_state']['BLACK_PAWNS'] | session['game_state']['BLACK_KNIGHTS'] |
+                session['game_state']['BLACK_BISHOPS'] | session['game_state']['BLACK_ROOKS'] |
+                session['game_state']['BLACK_QUEEN'] | session['game_state']['BLACK_KING']
+            )
             
             single_move = (pawns << 8) & ~occupied
             double_move = ((single_move & 0x0000000000FF0000) << 8) & ~occupied
-
             capture_left = (pawns << 7) & enemy_pieces2 & ~0x8080808080808080  # Capture diagonally left
             capture_right = (pawns << 9) & enemy_pieces2 & ~0x0101010101010101
             
             legal_moves |= single_move | double_move | capture_left | capture_right
+            self.pawn_moved_2_steps = double_move
 
             return legal_moves
         elif color == "black":
-            enemy_pieces2 = (session['game_state']['WHITE_PAWNS'] | session['game_state']['WHITE_KNIGHTS'] |
-                                session['game_state']['WHITE_BISHOPS'] | session['game_state']['WHITE_ROOKS'] |
-                                session['game_state']['WHITE_QUEEN'] | session['game_state']['WHITE_KING']
-                                )
+            enemy_pieces2 = (
+                session['game_state']['WHITE_PAWNS'] | session['game_state']['WHITE_KNIGHTS'] |
+                session['game_state']['WHITE_BISHOPS'] | session['game_state']['WHITE_ROOKS'] |
+                session['game_state']['WHITE_QUEEN'] | session['game_state']['WHITE_KING']
+            )
             
             single_move = (pawns >> 8) & ~occupied
             double_move = ((single_move & 0x0000FF0000000000) >> 8) & ~occupied
-
             capture_left = (pawns >> 7) & enemy_pieces2 & ~0x0101010101010101
             capture_right = (pawns >> 9) & enemy_pieces2 & ~0x8080808080808080
 
             legal_moves |= single_move | double_move | capture_left | capture_right
+            self.pawn_moved_2_steps = double_move
 
             return legal_moves
 

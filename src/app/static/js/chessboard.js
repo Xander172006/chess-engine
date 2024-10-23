@@ -1,6 +1,9 @@
 $(document).ready(function() {
     console.log('Document is ready');
 
+    let reloadTimeout;
+    let exitPressed = false;
+
     function showStoredModal(modalId, storageKey) {
         let shouldShow = localStorage.getItem(storageKey);
         if (shouldShow === 'true') {
@@ -85,6 +88,12 @@ $(document).ready(function() {
                         name: moveFrom.piece,
                         color: moveFrom.color
                     }),
+                    success: function(response) {
+                        console.log("Moves received:", response);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error getting moves:", error);
+                    }
                 });
 
                 socket.on('received-moves', function(data) {
@@ -104,10 +113,127 @@ $(document).ready(function() {
 
             clickCounter++;
 
+            // Reset exitPressed flag for new move
+            exitPressed = false;
+
+            // if piece is pawn:
+            if (moveFrom && (moveFrom.piece === 'white_pawns' || moveFrom.piece === 'black_pawns')) {
+                if (moveTo && (moveTo.notation[1] === '1' || moveTo.notation[1] === '8')) {
+                    exitPressed = true;
+                }
+            }
+
             // Send move information
             if (clickCounter === 2) {
+                console.log(exitPressed);
                 validMove = true;
 
+                if (!exitPressed) { // Check if the exit button was pressed
+                    $.ajax({
+                        type: 'POST',
+                        url: "/make_move",
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            position: moveFrom.notation,
+                            placement: moveTo.notation,
+                            name: moveFrom.piece,
+                            color: moveFrom.color,
+                        }),
+                        success: function(response) {
+                            if (validMove) {
+                                // Move the piece in the DOM
+                                let fromSquare = $(`#square-${8 - parseInt(moveFrom.notation[1])}-${moveFrom.notation[0].charCodeAt(0) - 97}`);
+                                let toSquare = $(`#square-${8 - parseInt(moveTo.notation[1])}-${moveTo.notation[0].charCodeAt(0) - 97}`);
+                                let piece = fromSquare.find('.piece');
+
+                                setTimeout(() => {
+                                    piece.attr('data-piece-name', moveFrom.piece);
+                                    piece.attr('data-piece-color', moveFrom.color);
+
+                                    // remove highlights
+                                    $('.highlight').removeClass('highlight');
+                                }, 500);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error:", error);
+                        }
+                    });
+                } else {
+                    // show pawn promotion modal
+                    showPawnPromotionModal(moveFrom, moveTo);
+                }
+
+                clickCounter = 0;
+            }
+        });
+    });
+
+    function showPawnPromotionModal(moveFrom, moveTo) {
+        let promotionModal = $('#pawn-promotion-modal');
+        
+        // Get the position of the pawn
+        let pawnSquare = $(`#square-${8 - parseInt(moveFrom.notation[1])}-${moveFrom.notation[0].charCodeAt(0) - 97}`);
+        let pawnPosition = pawnSquare.offset();
+        
+        // Set the position of the modal
+        promotionModal.css({
+            top: 'auto',
+            left: pawnPosition.left,
+            display: 'block',
+        });
+
+        // Clear previous content
+        promotionModal.empty();
+
+        // Create list elements for each promotion piece
+        let promotionPieces = ['queen', 'rook', 'bishop', 'knight'];
+        let promotionList = document.createElement('ul');
+        promotionList.classList.add('promotion-list');
+        promotionPieces.forEach(piece => {
+            let listItem = document.createElement('li');
+            listItem.classList.add('promotion-button');
+            // Add the images to the list items
+            let imgItem = document.createElement('img');
+            imgItem.src = `/static/assets/pieces/${moveFrom.color}_${piece}.png`; // Adjust the path here
+            imgItem.alt = `${moveFrom.color} ${piece}`;
+            listItem.appendChild(imgItem);
+
+            listItem.dataset.pieceType = piece;
+            promotionList.appendChild(listItem);
+        });
+
+        // Add exit button
+        let exitButton = document.createElement('li');
+        exitButton.classList.add('promotion-exit-button');
+        exitButton.innerText = 'X';
+        promotionList.appendChild(exitButton);
+
+        // Add confirm button
+        let confirmButton = document.createElement('li');
+        confirmButton.classList.add('promotion-confirm-button');
+        promotionList.appendChild(confirmButton);
+
+        promotionModal.append(promotionList);
+
+        clearTimeout(reloadTimeout); 
+
+        let selectedPieceType = null;
+
+        // Add event listeners for promotion buttons
+        let promotionButtons = document.querySelectorAll('.promotion-button');
+        promotionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                selectedPieceType = this.dataset.pieceType;
+                // Highlight the selected piece
+                promotionButtons.forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Add event listener for confirm button
+        confirmButton.addEventListener('click', function() {
+            if (selectedPieceType) {
                 $.ajax({
                     type: 'POST',
                     url: "/make_move",
@@ -115,37 +241,32 @@ $(document).ready(function() {
                     data: JSON.stringify({
                         position: moveFrom.notation,
                         placement: moveTo.notation,
-                        name: moveFrom.piece,
-                        color: moveFrom.color,
+                        name: selectedPieceType,
+                        color: moveFrom.color
                     }),
                     success: function(response) {
-                        if (validMove) {
-                            // Move the piece in the DOM
-                            let fromSquare = $(`#square-${8 - parseInt(moveFrom.notation[1])}-${moveFrom.notation[0].charCodeAt(0) - 97}`);
-                            let toSquare = $(`#square-${8 - parseInt(moveTo.notation[1])}-${moveTo.notation[0].charCodeAt(0) - 97}`);
-                            let piece = fromSquare.find('.piece');
-                            
-                            setTimeout(() => {
-                                piece.attr('data-piece-name', moveFrom.piece);
-                                piece.attr('data-piece-color', moveFrom.color);
-                    
-                                piece.detach().css({ transform: '' });
-                                toSquare.append(piece);
-                    
-                                // remove highlights
-                                $('.highlight').removeClass('highlight');
-                            }, 500);
-                        }
+                        updateBoard(response); 
                     },
                     error: function(xhr, status, error) {
-                        console.error("Error:", error);
+                        console.error("Error during pawn promotion:", error);
                     }
                 });
-
-                clickCounter = 0;
+                $('#pawn-promotion-modal').hide();
+            } else {
+                alert('Please select a piece to promote to.');
             }
         });
-    });
+
+        // Add event listener for exit button
+        exitButton.addEventListener('click', function() {
+            $('#pawn-promotion-modal').hide();
+            exitPressed = true; // Set the flag to true when the exit button is pressed
+            // Reset the move state
+            moveFrom = null;
+            moveTo = null;
+            clickCounter = 0;
+        });
+    }
 
     // Update the board with new positions
     function updateBoard(pieces) {
@@ -179,7 +300,7 @@ $(document).ready(function() {
                 while (list_notations.firstChild) {
                     list_notations.removeChild(list_notations.firstChild);
                 }
-                setTimeout(() => {
+                reloadTimeout = setTimeout(() => {
                     location.reload();
                 }, 500);
             },
@@ -198,15 +319,31 @@ $(document).ready(function() {
         let fromPosition = fromSquare.offset();
         let toPosition = toSquare.offset();
     
-        piece.attr('data-piece-name', data.name);
-        piece.attr('data-piece-color', data.color);
+        let deltaX = toPosition.left - fromPosition.left;
+        let deltaY = toPosition.top - fromPosition.top;
     
+        // Remove highlights before starting the animation
+        $('.highlight').removeClass('highlight');
+    
+        // Add the piece-moving class to the piece
+        piece.addClass('piece-moving');
+    
+        // Apply the translation
         piece.css({
-            transform: `translate(${toPosition.left - fromPosition.left}px, ${toPosition.top - fromPosition.top}px)`
+            transform: `translate(${deltaX}px, ${deltaY}px)`
         });
     
         setTimeout(() => {
-            piece.detach().css({ transform: '' });
+            // Remove the translation and piece-moving class after the animation
+            piece.css({
+                transform: ''
+            });
+            piece.removeClass('piece-moving');
+    
+            // Remove any piece already present in the target square
+            toSquare.find('.piece').remove();
+    
+            // Move the capturing piece to the target square
             toSquare.append(piece);
     
             // Handle castling move
@@ -224,14 +361,22 @@ $(document).ready(function() {
                 let rookFromPosition = rookFromSquare.offset();
                 let rookToPosition = rookToSquare.offset();
     
+                rook.addClass('piece-moving');
                 rook.css({
                     transform: `translate(${rookToPosition.left - rookFromPosition.left}px, ${rookToPosition.top - rookFromPosition.top}px)`
                 });
     
                 setTimeout(() => {
-                    rook.detach().css({ transform: '' });
+                    rook.css({ transform: '' });
+                    rook.removeClass('piece-moving');
                     rookToSquare.append(rook);
                 }, 500);
+            }
+    
+            // Handle en passant capture
+            if (data.en_passant && data.captured_pawn_position) {
+                let capturedPawnSquare = $(`#square-${8 - parseInt(data.captured_pawn_position[1])}-${data.captured_pawn_position[0].charCodeAt(0) - 97}`);
+                capturedPawnSquare.find('.piece').remove();
             }
     
             // Update notation with captured piece indication
@@ -279,8 +424,11 @@ $(document).ready(function() {
             let li = document.createElement('li');
             li.innerText = notation;
             list_notations.appendChild(li);
-        }, 1000);
+    
+        }, 500); // Match the duration of the CSS transition
     });
+
+
 
     // Show invalid move event pop up
     socket.on('invalid-move', function(data) {
@@ -303,6 +451,8 @@ $(document).ready(function() {
 
         localStorage.setItem('showInvalidMoveModal', 'true');
     });
+
+
 
     // Show wrong turn event pop up
     socket.on('wrong-turn', function(data) {
@@ -351,43 +501,97 @@ $(document).ready(function() {
     });
 
     socket.on('pawn-promotion', function(data) {
-        console.log('pawn-promoting');
-        $('#pawn-promotion-modal').show(); // Show the promotion modal
+        let promotionModal = $('#pawn-promotion-modal');
+        
+        // Get the position of the pawn
+        let pawnSquare = $(`#square-${8 - parseInt(data.position[1])}-${data.position[0].charCodeAt(0) - 97}`);
+        let pawnPosition = pawnSquare.offset();
+        
+        // Set the position of the modal
+        promotionModal.css({
+            top: 'auto',
+            left: pawnPosition.left,
+            display: 'block',
+        });
     
-        let promotionModal = document.getElementById('pawn-promotion-modal');
-        promotionModal.innerHTML = 'promotion modal'; // Replace this with the actual HTML for promotion options
+        // Clear previous content
+        promotionModal.empty();
     
-        // Make sure to remove any existing setTimeouts that cause page reloads.
-        clearTimeout(reloadTimeout); // If you have a global variable reloadTimeout, clear it.
+        // Create list elements for each promotion piece
+        let promotionPieces = ['queen', 'rook', 'bishop', 'knight'];
+        let promotionList = document.createElement('ul');
+        promotionList.classList.add('promotion-list');
+        promotionPieces.forEach(piece => {
+            let listItem = document.createElement('li');
+            listItem.classList.add('promotion-button');
+            // Add the images to the list items
+            let imgItem = document.createElement('img');
+            imgItem.src = `/static/assets/pieces/${data.color}_${piece}.png`; // Adjust the path here
+            imgItem.alt = `${data.color} ${piece}`;
+            listItem.appendChild(imgItem);
+    
+            listItem.dataset.pieceType = piece;
+            promotionList.appendChild(listItem);
+        });
+    
+        // Add exit button
+        let exitButton = document.createElement('li');
+        exitButton.classList.add('promotion-exit-button');
+        exitButton.innerText = 'X';
+        promotionList.appendChild(exitButton);
+    
+
+        promotionModal.append(promotionList);
+    
+        clearTimeout(reloadTimeout); 
+    
+        let selectedPieceType = null;
     
         // Add event listeners for promotion buttons
         let promotionButtons = document.querySelectorAll('.promotion-button');
         promotionButtons.forEach(button => {
             button.addEventListener('click', function() {
-                // Handle the promotion choice and update game state
-                handlePawnPromotion(this.dataset.pieceType); // Function to handle promotion logic
-                $('#pawn-promotion-modal').hide(); // Close the modal
-                
-                // Send the promotion move to the server
+                selectedPieceType = this.dataset.pieceType;
+                // Highlight the selected piece
+                promotionButtons.forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+    
+        // Add event listener for confirm button
+        confirmButton.addEventListener('click', function() {
+            if (selectedPieceType) {
                 $.ajax({
                     type: 'POST',
                     url: "/make_move",
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        position: data.position, // Original position of the pawn
-                        placement: data.newPosition, // New position after promotion
-                        name: this.dataset.pieceType, // The new piece type (e.g., queen, rook, etc.)
-                        color: data.color // Color of the pawn
+                        position: data.position,
+                        placement: data.newPosition,
+                        name: selectedPieceType,
+                        color: data.playerColor
                     }),
                     success: function(response) {
-                        // Handle successful move response
-                        updateBoard(response); // Ensure the board updates with the new state
+                        updateBoard(response); 
                     },
                     error: function(xhr, status, error) {
                         console.error("Error during pawn promotion:", error);
                     }
                 });
-            });
+                $('#pawn-promotion-modal').hide();
+            } else {
+                alert('Please select a piece to promote to.');
+            }
+        });
+    
+        // Add event listener for exit button
+        exitButton.addEventListener('click', function() {
+            $('#pawn-promotion-modal').hide();
+            exitPressed = true; // Set the flag to true when the exit button is pressed
+            // Reset the move state
+            moveFrom = null;
+            moveTo = null;
+            clickCounter = 0;
         });
     });
 });

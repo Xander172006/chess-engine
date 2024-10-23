@@ -108,12 +108,11 @@ class Validation:
         if self.is_legal:
             game_state[f"{action['name'].upper()}"] ^= bitboard_pos
             game_state[f"{action['name'].upper()}"] |= bitboard_dest
-            # print(f"game_state variable: {self.devTools.print_bitboard(game_state[action['name'].upper()])}")
+
             # check for capture event
             if enemy_pieces & bitboard_dest:
                 for piece, variable in piece_mapping[enemy_color].items():
-                    # print(f"bitboard_dest: {self.devTools.print_bitboard(bitboard_dest)}")
-                    # print(f"game_state variable: {self.devTools.print_bitboard(game_state[variable])}")
+
                     if bitboard_dest & game_state[variable]:
 
                         # remove captured piece
@@ -225,9 +224,9 @@ class Validation:
         return False
 
 
-    def can_promote():
-        pass
-
-
-
-        
+    def get_en_passant_captured_pawn_position(self, move, color):
+        last_pawn_move = session.get('pawn-moved-2-steps')
+        if last_pawn_move:
+            captured_pawn_rank = '5' if color == 'white' else '4'
+            return last_pawn_move[0] + captured_pawn_rank
+        return None

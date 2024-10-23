@@ -111,6 +111,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative; /* Add this line */
 }
 
 .square.white {
@@ -121,11 +122,33 @@ body {
     background-color: #1d2f3a;
 }
 
+
+
+.highlight {
+    background-color: #4c7098 !important;
+    opacity: 0.7 !important;
+    z-index: 1; /* Lower z-index for the highlight circle */
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    position: absolute; /* Ensure the highlight circle is positioned absolutely */
+    top: 50%; /* Center the highlight circle */
+    left: 50%; /* Center the highlight circle */
+    transform: translate(-50%, -50%); /* Center the highlight circle */
+}
+
 .piece {
     width: 3rem;
     height: 3rem;
     background-size: contain;
     background-repeat: no-repeat;
+    transition: transform 0.5s ease;
+    position: relative; /* Keep the piece positioned relatively */
+    z-index: 2; /* Higher z-index for the piece */
+}
+
+
+.piece-moving {
     transition: transform 0.5s ease;
 }
 
@@ -225,14 +248,6 @@ body {
     color: black;
 }
 
-.highlight {
-    background-color: #4c7098 !important;
-    opacity: 0.7 !important;
-    z-index: 1;
-    width: 50%;
-    height: 50%;
-    border-radius: 50%;
-}
 
 
 .game-statistics-container {
@@ -363,6 +378,67 @@ body {
     padding-left: 0.5rem;
 }
 
-.pawn-promotion {
-    color: white;
+
+
+#pawn-promotion-modal {
+    z-index: 4;
+    position: fixed; /* Make the modal position fixed */
+    display: none; /* Hide the modal by default */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    border-radius: 5px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+
+}
+
+.promotion-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Align items to the start horizontally */
+    align-items: flex-start; /* Align items to the start vertically */
+    padding: 0;
+    margin: 0;
+}
+
+.promotion-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.promotion-button:hover {
+    background-color: #f0f0f0; /* Add a hover effect */
+}
+
+.promotion-button img {
+    width: 3rem;
+    height: 3rem;
+    object-fit: contain;
+}
+
+.promotion-exit-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background-color: lightgray;
+    font-family: monospace;
+    width: 100%;
+    padding: 0.25rem, 0;
+}
+
+.promotion-exit-button:hover {
+    background-color: #f0f0f0; /* Add a hover effect */
 }

@@ -7,14 +7,12 @@ class chessGame:
         from game.validations import Validation
         from setup.startup import Startup
 
-        
         self.devTools = devTools()
         self.validation = Validation("", False, None)
         self.start = Startup()
         self.start.game_startup()
         self.playerTurn = session.get('player_turn', 'white')
         self.chessResources = chessResources(session['game_state'], session.get('player_turn', 'white'))
-
 
     # setup the game
     def runGame(self):
@@ -23,7 +21,8 @@ class chessGame:
         board, pieces_board = self.chessResources.chessboard(game_state)
 
         return render_template('chessboard.html', board=board, pieces=pieces_board, player_turn=self.playerTurn)
-    
+
+
 
     # get all possible moves for a piece
     def giveMoves(self):
@@ -35,6 +34,7 @@ class chessGame:
 
         return ('', 204)
     
+
 
     def create_move(self):
         data = request.get_json()
@@ -69,32 +69,40 @@ class chessGame:
                     socketio.emit('king-danger', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color'], 'message': "Move puts your king in check."})
                     return ('', 204)
 
-                session['game_state'] = game_state
-                session['turn_count'] = turn_count + 1
-                session['player_turn'] = 'black' if player_turn == 'white' else 'white'
-                session.modified = True
-
                 # check for pawn promotion
                 if 'pawn' in action['name'] and (bitboard_dest & 0xFF00000000000000 or bitboard_dest & 0x00000000000000FF):
                     socketio.emit('pawn-promotion', {'position': action['position'], 'placement': action['placement'], 'name': action['name'], 'color': action['color']})
                     return ('', 204)
-                else:
-                    castling = None
-                    if 'king' in action['name']:
-                        if action['placement'] == 'g1' or action['placement'] == 'g8':
-                            castling = 'kingside'
-                        elif action['placement'] == 'c1' or action['placement'] == 'c8':
-                            castling = 'queenside'
 
-                    socketio.emit('move-made', {
-                            'position': action['position'],
-                            'placement': action['placement'],
-                            'name': action['name'],
-                            'color': action['color'],
-                            'captured_piece': captured_piece,
-                            'castling': castling
-                        }
-                    )
+                castling = None
+                if 'king' in action['name']:
+                    if action['placement'] == 'g1' or action['placement'] == 'g8':
+                        castling = 'kingside'
+                    elif action['placement'] == 'c1' or action['placement'] == 'c8':
+                        castling = 'queenside'
+
+                en_passant = self.validation.enPassant(action['position'], action['color'], game_state)
+                captured_pawn_position = None
+                if en_passant:
+                    captured_pawn_position = self.validation.get_en_passant_captured_pawn_position(action['position'], action['color'])
+
+                # update game state
+                session['game_state'] = temp_game_state
+                session['turn_count'] = turn_count + 1
+                session['player_turn'] = 'black' if player_turn == 'white' else 'white'
+                session.modified = True
+
+                socketio.emit('move-made', {
+                        'position': action['position'],
+                        'placement': action['placement'],
+                        'name': action['name'],
+                        'color': action['color'],
+                        'captured_piece': captured_piece,
+                        'castling': castling,
+                        'en_passant': en_passant,
+                        'captured_pawn_position': captured_pawn_position
+                    }
+                )
             else:
                 # Invalid move 
                 socketio.emit('invalid-move', {
@@ -116,6 +124,8 @@ class chessGame:
             )
 
         return ('', 204)
+
+
     
 
     def reset_board(self):
