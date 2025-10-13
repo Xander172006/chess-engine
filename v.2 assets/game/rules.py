@@ -1,9 +1,9 @@
-from pieces import pieces
+from pieces import Pieces
 
 class rules():
     def __init__(self, board=None):
         self.board = board
-        self.pieces = pieces(board) if board else None
+        self.pieces = Pieces(board) if board else None
 
     def is_valid_square(self, square_name):
         if len(square_name) != 2:

@@ -1,12 +1,11 @@
-from board import board
-from pieces import pieces
+from board import Board
 from moves import moves
 from rules import rules
 
 
 class chessGame():
     def __init__(self):
-        self.board = board()
+        self.board = Board()
         self.moves = moves(self.board)
         self.rules = rules(self.board)
     

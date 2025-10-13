@@ -1,7 +1,7 @@
-from pieces import pieces
+from pieces import Pieces
 from colorama import Fore, Style
 
-class board():
+class Board():
     def __init__(self):
         self.white_pawns = 0x000000000000FF00
         self.white_rooks = 0x0000000000000081 
@@ -21,14 +21,13 @@ class board():
         self.en_passant_target = None
         self.move_count = 0
 
-        self.pieces = pieces(self)
+        self.pieces = Pieces(self)
 
         self.king_moves = [0] * 64
         self.knight_moves = [0] * 64
         self._precompute_moves()
     
     def _precompute_moves(self):
-        """Pre-compute king and knight move patterns"""
         for square in range(64):
             row, col = divmod(square, 8)
             king_mask = 0
@@ -55,6 +54,7 @@ class board():
             self.knight_moves[square] = knight_mask
 
 
+    # return piece notation at given square
     def get_piece_at_square(self, square_name):
         bitboard = self.pieces.square_to_bitboard(square_name)
 
@@ -72,7 +72,7 @@ class board():
         if self.black_king & bitboard: return 'k'
         return '.'
     
-
+    # translate piece notation to unicode
     def get_piece_symbol_at_square(self, square_name):
         bitboard = self.pieces.square_to_bitboard(square_name)
 
@@ -90,6 +90,7 @@ class board():
         if self.black_king & bitboard: return '♚'
         return '.'
     
+
     def print_board(self, highlight_moves=False):
         possible_moves = set()
 
@@ -102,9 +103,6 @@ class board():
             for move in all_moves:
                 if isinstance(move, tuple) and len(move) == 2:
                     possible_moves.add(move[1]) 
-
-
-
 
         print("\n  a b c d e f g h")
         for row in range(7, -1, -1):
@@ -119,6 +117,7 @@ class board():
                     print(piece + " ", end='')
             print(f"{row+1}")
         print("  a b c d e f g h")
+        
 
         # display turn info
         player = "White" if self.white_to_move else "Black"

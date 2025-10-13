@@ -50,5 +50,22 @@ class Pawn():
                         if (enemy_pieces & (1 << to_pos)):
                             to_square = chr(ord('a') + new_col) + str(new_row + 1)
                             moves.append((from_square, to_square))
+                
+                # En Passant Captures
+                if self.board.en_passant_target:
+                    en_passant_row, en_passant_col = self.square_name_to_coords(self.board.en_passant_target)
+                    
+                    # Check if this pawn can capture en passant
+                    for dc in [-1, 1]:
+                        new_col = col + dc
+                        if new_col == en_passant_col and row + direction == en_passant_row:
+                            to_square = chr(ord('a') + new_col) + str(en_passant_row + 1)
+                            moves.append((from_square, to_square))
 
             return moves
+        
+        def square_name_to_coords(self, square_name):
+            """Convert square name like 'e3' to row, col coordinates"""
+            col = ord(square_name[0]) - ord('a')
+            row = int(square_name[1]) - 1
+            return row, col

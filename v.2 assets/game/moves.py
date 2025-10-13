@@ -16,6 +16,7 @@ class moves():
         self.queens = Queen(self.board)
         
 
+        # Precompute king and knight moves 
         for square in range(64):
             row, col = divmod(square, 8)
             king_mask = 0
@@ -65,27 +66,27 @@ class moves():
         else:
             return moves
         
+        
         friendly_pieces = self.pieces.get_all_white_pieces() if is_white else self.pieces.get_all_black_pieces()
-
         temp_pieces = pieces
+
         while temp_pieces:
+            # Get the position of the least significant bit
             square = (temp_pieces & -temp_pieces).bit_length() - 1
             temp_pieces &= temp_pieces - 1
             
             row, col = divmod(square, 8)
             from_square = chr(ord('a') + col) + str(row + 1)
             
-            # Get possible moves for this piece
             if piece_type == 'king':
                 possible_moves = self.board.king_moves[square]
             elif piece_type == 'knight':
                 possible_moves = self.board.knight_moves[square]
             
-            # Filter out moves to squares occupied by friendly pieces
+            # Filter out squares occupied by friendly pieces
             possible_moves &= ~friendly_pieces
-            
-            # Convert bitboard moves to square names
             temp_moves = possible_moves
+
             while temp_moves:
                 to_square_bit = (temp_moves & -temp_moves).bit_length() - 1
                 temp_moves &= temp_moves - 1
@@ -112,22 +113,37 @@ class moves():
 
 
     def make_move(self, from_square, to_square):
-        """Make a move on the board"""
         from_bit = self.pieces.square_to_bitboard(from_square)
         to_bit = self.pieces.square_to_bitboard(to_square)
         
-        # Find which piece is moving
+
         piece = self.board.get_piece_at_square(from_square)
-        if piece == '.':
-            return False
-        
         is_white_piece = piece.isupper()
         
-        # Check if it's the correct player's turn
+
         if is_white_piece != self.board.white_to_move:
             return False
         
-        # Remove piece from original position and place at destination
+
+        is_en_passant_capture = False
+        captured_pawn_bit = 0
+        
+        # determine en_passant capture
+        if piece.upper() == 'P' and self.board.en_passant_target:
+            from_row, from_col = self.pieces.square_name_to_coords(from_square)
+            to_row, to_col = self.pieces.square_name_to_coords(to_square)
+            en_passant_row, en_passant_col = self.pieces.square_name_to_coords(self.board.en_passant_target)
+
+            if to_row == en_passant_row and to_col == en_passant_col:
+                is_en_passant_capture = True
+
+                captured_pawn_row = from_row
+                captured_pawn_col = to_col
+                captured_pawn_bit = 1 << (captured_pawn_row * 8 + captured_pawn_col)
+        
+        self.board.en_passant_target = None
+        
+        # Remove piece from original position to destination
         if piece.upper() == 'P':
             if is_white_piece:
                 self.board.white_pawns &= ~from_bit
@@ -135,6 +151,16 @@ class moves():
             else:
                 self.board.black_pawns &= ~from_bit
                 self.board.black_pawns |= to_bit
+            
+            # Check for en passant
+            from_row, from_col = self.pieces.square_name_to_coords(from_square)
+            to_row, to_col = self.pieces.square_name_to_coords(to_square)
+            
+
+            if abs(to_row - from_row) == 2:
+                en_passant_row = (from_row + to_row) // 2 
+                en_passant_square = chr(ord('a') + to_col) + str(en_passant_row + 1)
+                self.board.en_passant_target = en_passant_square
         elif piece.upper() == 'R':
             if is_white_piece:
                 self.board.white_rooks &= ~from_bit
@@ -172,19 +198,27 @@ class moves():
                 self.board.black_king |= to_bit
 
 
-        # Remove any captured piece
-        self.board.white_pawns &= ~to_bit
-        self.board.white_rooks &= ~to_bit
-        self.board.white_knights &= ~to_bit
-        self.board.white_bishops &= ~to_bit
-        self.board.white_queen &= ~to_bit
-        self.board.black_pawns &= ~to_bit
-        self.board.black_rooks &= ~to_bit
-        self.board.black_knights &= ~to_bit
-        self.board.black_bishops &= ~to_bit
-        self.board.black_queen &= ~to_bit
+        # Remove captured piece
+        if is_en_passant_capture:
+            # For en passant
+            if is_white_piece:
+                self.board.black_pawns &= ~captured_pawn_bit
+            else:
+                self.board.white_pawns &= ~captured_pawn_bit
+        else:
+            # Normal capture
+            self.board.white_pawns &= ~to_bit
+            self.board.white_rooks &= ~to_bit
+            self.board.white_knights &= ~to_bit
+            self.board.white_bishops &= ~to_bit
+            self.board.white_queen &= ~to_bit
+            self.board.black_pawns &= ~to_bit
+            self.board.black_rooks &= ~to_bit
+            self.board.black_knights &= ~to_bit
+            self.board.black_bishops &= ~to_bit
+            self.board.black_queen &= ~to_bit
         
-        # Re-add the moving piece (in case we accidentally removed it above)
+        # Re-add the moving piece
         if piece.upper() == 'P':
             if is_white_piece:
                 self.board.white_pawns |= to_bit
@@ -220,36 +254,25 @@ class moves():
         self.board.white_to_move = not self.board.white_to_move
         if self.board.white_to_move:
             self.board.move_count += 1
-
-
-        is_king_in_check = self.is_king_in_check(not self.board.white_to_move)
         
         return True
     
 
     def is_move_legal(self, from_square, to_square):
-        """Check if a move is legal (doesn't leave own king in check)"""
-        # Save current board state
         original_board_state = self.save_board_state()
-        
-        # Make the move temporarily
         move_successful = self.make_move(from_square, to_square)
+
         if not move_successful:
             return False
         
-        # Check if our own king is now in check (which would make the move illegal)
-        # Note: after make_move, the turn has switched, so we check the previous player's king
         previous_player_was_white = not self.board.white_to_move
         king_in_check = self.is_king_in_check(previous_player_was_white)
         
-        # Restore original board state
         self.restore_board_state(original_board_state)
         
-        # Move is legal if it doesn't leave our king in check
         return not king_in_check
     
     def save_board_state(self):
-        """Save the current board state"""
         return {
             'white_pawns': self.board.white_pawns,
             'white_rooks': self.board.white_rooks,
@@ -268,8 +291,8 @@ class moves():
             'move_count': self.board.move_count
         }
     
+
     def restore_board_state(self, state):
-        """Restore a previously saved board state"""
         self.board.white_pawns = state['white_pawns']
         self.board.white_rooks = state['white_rooks']
         self.board.white_knights = state['white_knights']
@@ -286,17 +309,19 @@ class moves():
         self.board.en_passant_target = state['en_passant_target']
         self.board.move_count = state['move_count']
 
+
     def is_king_in_check(self, is_white):
+        # Check if king in check
         king_bitboard = self.board.white_king if is_white else self.board.black_king
         if king_bitboard == 0:
             return False 
         
-        king_square = (king_bitboard & -king_bitboard).bit_length() - 1
         opponent_is_white = not is_white
-
         opponent_attacks = self.generate_attack_map(opponent_is_white)
+
         return (opponent_attacks & king_bitboard) != 0
     
+
     def generate_attack_map(self, is_white):
         attacks = 0
         all_pieces = self.board.pieces.get_all_pieces()
@@ -328,7 +353,7 @@ class moves():
                     to_pos = new_row * 8 + new_col
                     attacks |= 1 << to_pos
                     
-                    # Stop if there's a piece blocking the path
+                    # Stop if piece blocks path
                     if all_pieces & (1 << to_pos):
                         break
                         
@@ -349,21 +374,21 @@ class moves():
                     to_pos = new_row * 8 + new_col
                     attacks |= 1 << to_pos
                     
-                    # Stop if there's a piece blocking the path
+                    # Stop if piece blocks path
                     if all_pieces & (1 << to_pos):
                         break
                         
                     new_row += dr
                     new_col += dc
 
-        # Queen attacks (combination of bishop and rook)
+        # Queen attacks
         temp_queens = self.board.white_queen if is_white else self.board.black_queen
         while temp_queens:
             square = (temp_queens & -temp_queens).bit_length() - 1
             temp_queens &= temp_queens - 1
             row, col = divmod(square, 8)
             
-            # Bishop-like moves for queen
+            # diagonal logic
             directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
             for dr, dc in directions:
                 new_row, new_col = row + dr, col + dc
@@ -377,7 +402,7 @@ class moves():
                     new_row += dr
                     new_col += dc
             
-            # Rook-like moves for queen
+            # vertical and horizontal logic
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for dr, dc in directions:
                 new_row, new_col = row + dr, col + dc

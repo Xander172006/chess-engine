@@ -1,4 +1,4 @@
-class pieces():
+class Pieces():
     def __init__(self, board=None):
         self.board = board
 
@@ -27,4 +27,9 @@ class pieces():
             return None
         square = (bitboard & -bitboard).bit_length() - 1
         row, col = divmod(square, 8)
-        return chr(col + ord('a')) + str(row + 1)   
+        return chr(col + ord('a')) + str(row + 1)  
+
+    def square_name_to_coords(self, square_name):
+        col = ord(square_name[0]) - ord('a')
+        row = int(square_name[1]) - 1
+        return row, col
