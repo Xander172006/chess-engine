@@ -91,7 +91,7 @@ class Board():
         return '.'
     
 
-    def print_board(self, highlight_moves=False):
+    def print_board(self, highlight_moves=False, show_evaluation=True):
         possible_moves = set()
 
         # allow highlights to be on
@@ -104,7 +104,12 @@ class Board():
                 if isinstance(move, tuple) and len(move) == 2:
                     possible_moves.add(move[1]) 
 
-        print("\n  a b c d e f g h")
+        if show_evaluation:
+            from engine.evaluator import Evaluator
+            evaluator = Evaluator(self, self.pieces)
+            print(f"\n{evaluator.get_evaluation_display()}")
+
+        print("  a b c d e f g h")
         for row in range(7, -1, -1):
             print(f"{row+1} ", end='')
             for col in range(8):
@@ -117,7 +122,7 @@ class Board():
                     print(piece + " ", end='')
             print(f"{row+1}")
         print("  a b c d e f g h")
-        
+
 
         # display turn info
         player = "White" if self.white_to_move else "Black"
