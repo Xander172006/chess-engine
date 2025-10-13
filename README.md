@@ -1,5 +1,15 @@
 # chess-engine
 
+<!-- specify version of application -->
+<p align="left">
+   <a href="https://github.com/themeselection/materio-vuetify-vuejs-admin-template-free/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/themeselection/materio-vuetify-vuejs-admin-template-free" alt="license">
+   </a>
+   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/themeselection/materio-vuetify-vuejs-admin-template-free/deploy-demos.yml">
+</p>
+
+
+
 In this project, I build my own chess-engine written in Python.
 Chess is one of my biggest passions along with programming, therefore I decided to combine both of them to build a scalable chess-engine from scratch using Python with Flask. The project includes all fundementals of chess in a web application.
 
@@ -13,6 +23,7 @@ Chess is one of my biggest passions along with programming, therefore I decided 
 ![Flask](https://img.shields.io/badge/Flask-3776AB?style=for-the-badge&labelColor=darkgreen&logo=flask&logoColor=white&color=darkgreen)
 ![Jinja](https://img.shields.io/badge/Jinja-3776AB?style=for-the-badge&labelColor=black&logo=jinja&logoColor=white&color=black)
 
+
 📁 **`src/`**: This folder contains all code written <br />
     - 📁 **`app/`**: This folder contains main root of the code structure <br />
             - 📄 **`app.py`**: file to run the application
@@ -22,7 +33,10 @@ Chess is one of my biggest passions along with programming, therefore I decided 
 
 <br />
 
-## How to get started?
+
+"This project is currently undergoing a development changes for v2.0. I will update the README.md file with more information once further progress has been made"
+
+<!-- ## How to get started?
 
 1. **Clone the repository**
 
@@ -51,10 +65,10 @@ Chess is one of my biggest passions along with programming, therefore I decided 
 
     ```bash
     python app/app.py
-    ```
+    ``` -->
 
 
-## Usage guide
+<!-- ## Usage guide
 
 ### _How to play?_
 
@@ -65,7 +79,7 @@ To make a move, you have to select the piece you want to move and then follow it
 
 
 https://github.com/Xander172006/chess-engine/assets/136751241/c3fffe12-6834-4932-b82f-b617ec7258c8
-
+ -->
 
 
 ## Contributors
