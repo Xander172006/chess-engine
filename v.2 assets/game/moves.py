@@ -1,9 +1,21 @@
-from colorama import Fore, Style
+from chesspieces.pawns import Pawn
+from chesspieces.knights import Knight
+from chesspieces.bishops import Bishop
+from chesspieces.rooks import Rook
+from chesspieces.queens import Queen
 
 class moves():
     def __init__(self, board):
         self.board = board
         self.pieces = board.pieces
+
+        self.pawns = Pawn(self.board)
+        self.knights = Knight(self.board)
+        self.bishops = Bishop(self.board)
+        self.rooks = Rook(self.board)
+        self.queens = Queen(self.board)
+        
+
         for square in range(64):
             row, col = divmod(square, 8)
             king_mask = 0
@@ -28,69 +40,28 @@ class moves():
             self.board.knight_moves[square] = knight_mask
 
             # Note: Rook, Bishop, and Queen moves are not precomputed in this simple version
-
-
-    def generate_pawn_moves(self, is_white):
-        moves = []
-        # get all pawns
-        pawns = self.board.white_pawns if is_white else self.board.black_pawns
-        all_pieces = self.board.pieces.get_all_pieces()
-        enemy_pieces = self.board.pieces.get_all_black_pieces() if is_white else self.board.pieces.get_all_white_pieces()
-
-        # determine move direction
-        direction = 1 if is_white else -1
-        start_rank = 1 if is_white else 6
-
-        temp_pawns = pawns
-
-        # simulate moves for each pawn
-        while temp_pawns:
-            # find least significant bit (LSB)
-            square = (temp_pawns & -temp_pawns).bit_length() - 1
-            temp_pawns &= temp_pawns - 1
-
-            # get to and from squares
-            row, col = divmod(square, 8)
-            from_square = chr(col + ord('a')) + str(row + 1)
-
-            new_row = row + direction
-            if 0 <= new_row < 8:
-                to_pos =  new_row * 8 + col
-                if not (all_pieces & (1 << to_pos)): # square empty
-                    to_square = chr(ord('a') + col) + str(new_row + 1)
-                    moves.append((from_square, to_square))
-
-                    if row == start_rank:
-                        new_row2 = row + 2 * direction
-                        if 0 <= new_row2 < 8:
-                            to_pos2 = new_row2 * 8 + col
-                            if not (all_pieces & (1 << to_pos2)):
-                                to_square2 = chr(ord('a') + col) + str(new_row2 + 1)
-                                moves.append((from_square, to_square2))
-
-
-            # Captures
-            for dc in [-1, 1]:
-                new_col = col + dc
-                if 0 <= new_row < 8 and 0 <= new_col < 8:
-                    to_pos = new_row * 8 + new_col
-                    if (enemy_pieces & (1 << to_pos)):
-                        to_square = chr(ord('a') + new_col) + str(new_row + 1)
-                        moves.append((from_square, to_square))
-
-        return moves
-    
+        
 
     def generate_piece_moves(self, piece_type, is_white):
         moves = []
 
         if piece_type == 'pawn':
-            return self.generate_pawn_moves(is_white)
+            return self.pawns.generate_pawn_moves(is_white)
         
+        if piece_type == 'knight':
+            return self.knights.generate_knight_moves(is_white)
+        
+        if piece_type == 'bishop':
+            return self.bishops.generate_bishop_moves(is_white)
+        
+        if piece_type == 'rook':
+            return self.rooks.generate_rook_moves(is_white)
+        
+        if piece_type == 'queen': 
+            return self.queens.generate_queen_moves(is_white)
+
         if piece_type == 'king':
             pieces = self.board.white_king if is_white else self.board.black_king
-        elif piece_type == 'knight':
-            pieces = self.board.white_knights if is_white else self.board.black_knights
         else:
             return moves
         
@@ -127,13 +98,15 @@ class moves():
     
 
     def generate_all_moves(self):
-        """Generate all legal moves for the current player"""
         is_white = self.board.white_to_move
         moves = []
         
         moves.extend(self.generate_piece_moves('pawn', is_white))
         moves.extend(self.generate_piece_moves('king', is_white))
         moves.extend(self.generate_piece_moves('knight', is_white))
+        moves.extend(self.generate_piece_moves('bishop', is_white))
+        moves.extend(self.generate_piece_moves('rook', is_white))
+        moves.extend(self.generate_piece_moves('queen', is_white))
         
         return moves
 
@@ -247,5 +220,192 @@ class moves():
         self.board.white_to_move = not self.board.white_to_move
         if self.board.white_to_move:
             self.board.move_count += 1
+
+
+        is_king_in_check = self.is_king_in_check(not self.board.white_to_move)
         
         return True
+    
+
+    def is_move_legal(self, from_square, to_square):
+        """Check if a move is legal (doesn't leave own king in check)"""
+        # Save current board state
+        original_board_state = self.save_board_state()
+        
+        # Make the move temporarily
+        move_successful = self.make_move(from_square, to_square)
+        if not move_successful:
+            return False
+        
+        # Check if our own king is now in check (which would make the move illegal)
+        # Note: after make_move, the turn has switched, so we check the previous player's king
+        previous_player_was_white = not self.board.white_to_move
+        king_in_check = self.is_king_in_check(previous_player_was_white)
+        
+        # Restore original board state
+        self.restore_board_state(original_board_state)
+        
+        # Move is legal if it doesn't leave our king in check
+        return not king_in_check
+    
+    def save_board_state(self):
+        """Save the current board state"""
+        return {
+            'white_pawns': self.board.white_pawns,
+            'white_rooks': self.board.white_rooks,
+            'white_knights': self.board.white_knights,
+            'white_bishops': self.board.white_bishops,
+            'white_queen': self.board.white_queen,
+            'white_king': self.board.white_king,
+            'black_pawns': self.board.black_pawns,
+            'black_rooks': self.board.black_rooks,
+            'black_knights': self.board.black_knights,
+            'black_bishops': self.board.black_bishops,
+            'black_queen': self.board.black_queen,
+            'black_king': self.board.black_king,
+            'white_to_move': self.board.white_to_move,
+            'en_passant_target': self.board.en_passant_target,
+            'move_count': self.board.move_count
+        }
+    
+    def restore_board_state(self, state):
+        """Restore a previously saved board state"""
+        self.board.white_pawns = state['white_pawns']
+        self.board.white_rooks = state['white_rooks']
+        self.board.white_knights = state['white_knights']
+        self.board.white_bishops = state['white_bishops']
+        self.board.white_queen = state['white_queen']
+        self.board.white_king = state['white_king']
+        self.board.black_pawns = state['black_pawns']
+        self.board.black_rooks = state['black_rooks']
+        self.board.black_knights = state['black_knights']
+        self.board.black_bishops = state['black_bishops']
+        self.board.black_queen = state['black_queen']
+        self.board.black_king = state['black_king']
+        self.board.white_to_move = state['white_to_move']
+        self.board.en_passant_target = state['en_passant_target']
+        self.board.move_count = state['move_count']
+
+    def is_king_in_check(self, is_white):
+        king_bitboard = self.board.white_king if is_white else self.board.black_king
+        if king_bitboard == 0:
+            return False 
+        
+        king_square = (king_bitboard & -king_bitboard).bit_length() - 1
+        opponent_is_white = not is_white
+
+        opponent_attacks = self.generate_attack_map(opponent_is_white)
+        return (opponent_attacks & king_bitboard) != 0
+    
+    def generate_attack_map(self, is_white):
+        attacks = 0
+        all_pieces = self.board.pieces.get_all_pieces()
+        
+        # Knight attacks
+        temp_knights = self.board.white_knights if is_white else self.board.black_knights
+        while temp_knights:
+            square = (temp_knights & -temp_knights).bit_length() - 1
+            temp_knights &= temp_knights - 1
+            attacks |= self.board.knight_moves[square]
+
+        # King attacks
+        king_bitboard = self.board.white_king if is_white else self.board.black_king
+        if king_bitboard:
+            square = (king_bitboard & -king_bitboard).bit_length() - 1
+            attacks |= self.board.king_moves[square]
+
+        # Bishop attacks
+        temp_bishops = self.board.white_bishops if is_white else self.board.black_bishops
+        while temp_bishops:
+            square = (temp_bishops & -temp_bishops).bit_length() - 1
+            temp_bishops &= temp_bishops - 1
+            row, col = divmod(square, 8)
+            directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+            
+            for dr, dc in directions:
+                new_row, new_col = row + dr, col + dc
+                while 0 <= new_row < 8 and 0 <= new_col < 8:
+                    to_pos = new_row * 8 + new_col
+                    attacks |= 1 << to_pos
+                    
+                    # Stop if there's a piece blocking the path
+                    if all_pieces & (1 << to_pos):
+                        break
+                        
+                    new_row += dr
+                    new_col += dc
+
+        # Rook attacks
+        temp_rooks = self.board.white_rooks if is_white else self.board.black_rooks
+        while temp_rooks:
+            square = (temp_rooks & -temp_rooks).bit_length() - 1
+            temp_rooks &= temp_rooks - 1
+            row, col = divmod(square, 8)
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            
+            for dr, dc in directions:
+                new_row, new_col = row + dr, col + dc
+                while 0 <= new_row < 8 and 0 <= new_col < 8:
+                    to_pos = new_row * 8 + new_col
+                    attacks |= 1 << to_pos
+                    
+                    # Stop if there's a piece blocking the path
+                    if all_pieces & (1 << to_pos):
+                        break
+                        
+                    new_row += dr
+                    new_col += dc
+
+        # Queen attacks (combination of bishop and rook)
+        temp_queens = self.board.white_queen if is_white else self.board.black_queen
+        while temp_queens:
+            square = (temp_queens & -temp_queens).bit_length() - 1
+            temp_queens &= temp_queens - 1
+            row, col = divmod(square, 8)
+            
+            # Bishop-like moves for queen
+            directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+            for dr, dc in directions:
+                new_row, new_col = row + dr, col + dc
+                while 0 <= new_row < 8 and 0 <= new_col < 8:
+                    to_pos = new_row * 8 + new_col
+                    attacks |= 1 << to_pos
+                    
+                    if all_pieces & (1 << to_pos):
+                        break
+                        
+                    new_row += dr
+                    new_col += dc
+            
+            # Rook-like moves for queen
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            for dr, dc in directions:
+                new_row, new_col = row + dr, col + dc
+                while 0 <= new_row < 8 and 0 <= new_col < 8:
+                    to_pos = new_row * 8 + new_col
+                    attacks |= 1 << to_pos
+                    
+                    if all_pieces & (1 << to_pos):
+                        break
+                        
+                    new_row += dr
+                    new_col += dc
+
+        # Pawn attacks
+        temp_pawns = self.board.white_pawns if is_white else self.board.black_pawns
+        while temp_pawns:
+            square = (temp_pawns & -temp_pawns).bit_length() - 1
+            temp_pawns &= temp_pawns - 1
+            row, col = divmod(square, 8)
+            if is_white:
+                for dc in [-1, 1]:
+                    to_row, to_col = row + 1, col + dc
+                    if 0 <= to_row < 8 and 0 <= to_col < 8:
+                        attacks |= 1 << (to_row * 8 + to_col)
+            else:
+                for dc in [-1, 1]:
+                    to_row, to_col = row - 1, col + dc
+                    if 0 <= to_row < 8 and 0 <= to_col < 8:
+                        attacks |= 1 << (to_row * 8 + to_col)
+
+        return attacks

@@ -19,6 +19,11 @@ class chessGame():
                 self.board.print_board(highlight_moves=True)
 
                 player = "White" if self.board.white_to_move else "Black"
+                
+                # Check if current player is in check
+                if self.moves.is_king_in_check(self.board.white_to_move):
+                    print(f"🚨 CHECK! {player} king is under attack! 🚨")
+                
                 move_input = input(f"{player} move: ").strip().lower()
 
                 if move_input == 'quit':
@@ -43,9 +48,20 @@ class chessGame():
                     print("Invalid square! Use format like 'e2' or 'h7'")
                     continue
 
+                # First check if the move is in the list of possible moves
                 legal_moves = self.moves.generate_all_moves()
                 if (from_square, to_square) not in legal_moves:
                     print("Illegal move! Try again.")
+                    continue
+
+                # Then check if the move is actually legal (doesn't leave king in check)
+                if not self.moves.is_move_legal(from_square, to_square):
+                    # Check if the current player is in check
+                    current_player_in_check = self.moves.is_king_in_check(self.board.white_to_move)
+                    if current_player_in_check:
+                        print("You are in check! You must move your king to safety or block the attack.")
+                    else:
+                        print("That move would put your king in check! Try another move.")
                     continue
 
                 if self.moves.make_move(from_square, to_square):

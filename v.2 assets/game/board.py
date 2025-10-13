@@ -33,7 +33,7 @@ class board():
             row, col = divmod(square, 8)
             king_mask = 0
 
-            # king
+            # determine king moves in all 8 directions
             for dr in [-1, 0, 1]:
                 for dc in [-1, 0, 1]:
                     if dr == 0 and dc == 0:
@@ -45,7 +45,7 @@ class board():
                         king_mask |= 1 << (new_row * 8 + new_col)
             self.king_moves[square] = king_mask
 
-            # knight
+            # determine knight moves in "L" shapes
             knight_mask = 0
             knight_deltas = [(-2,-1), (-2,1), (-1,-2), (-1,2), (1,-2), (1,2), (2,-1), (2,1)]
             for dr, dc in knight_deltas:
@@ -53,6 +53,7 @@ class board():
                 if 0 <= new_row < 8 and 0 <= new_col < 8:
                     knight_mask |= 1 << (new_row * 8 + new_col)
             self.knight_moves[square] = knight_mask
+
 
     def get_piece_at_square(self, square_name):
         bitboard = self.pieces.square_to_bitboard(square_name)
@@ -71,9 +72,28 @@ class board():
         if self.black_king & bitboard: return 'k'
         return '.'
     
+
+    def get_piece_symbol_at_square(self, square_name):
+        bitboard = self.pieces.square_to_bitboard(square_name)
+
+        if self.white_pawns & bitboard: return '♙'
+        if self.white_rooks & bitboard: return '♖'
+        if self.white_knights & bitboard: return '♘'
+        if self.white_bishops & bitboard: return '♗'
+        if self.white_queen & bitboard: return '♕'
+        if self.white_king & bitboard: return '♔'
+        if self.black_pawns & bitboard: return '♟'
+        if self.black_rooks & bitboard: return '♜'
+        if self.black_knights & bitboard: return '♞'
+        if self.black_bishops & bitboard: return '♝'
+        if self.black_queen & bitboard: return '♛'
+        if self.black_king & bitboard: return '♚'
+        return '.'
+    
     def print_board(self, highlight_moves=False):
         possible_moves = set()
 
+        # allow highlights to be on
         if highlight_moves:
             from moves import moves
             move_generator = moves(self)
@@ -91,7 +111,7 @@ class board():
             print(f"{row+1} ", end='')
             for col in range(8):
                 square_name = chr(col + ord('a')) + str(row + 1)
-                piece = self.get_piece_at_square(square_name)
+                piece = self.get_piece_symbol_at_square(square_name) 
 
                 if highlight_moves and square_name in possible_moves:
                     print(Fore.RED + piece + Style.RESET_ALL + " ", end='')
@@ -100,6 +120,7 @@ class board():
             print(f"{row+1}")
         print("  a b c d e f g h")
 
+        # display turn info
         player = "White" if self.white_to_move else "Black"
         print(f"\nMove {self.move_count + 1}: {player} to move")
         if self.en_passant_target:
