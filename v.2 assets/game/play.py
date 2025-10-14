@@ -9,6 +9,7 @@ class chessGame():
         self.moves = moves(self.board)
         self.rules = rules(self.board)
     
+
     def play(self):
             print("=== Simple Bitboard Chess ===")
             print("Enter moves in format: from_square to_square (e.g., 'e2 e4')")
@@ -19,7 +20,6 @@ class chessGame():
 
                 player = "White" if self.board.white_to_move else "Black"
                 
-                # Check if current player is in check
                 if self.moves.is_king_in_check(self.board.white_to_move):
                     print(f"🚨 CHECK! {player} king is under attack! 🚨")
                 

@@ -14,7 +14,6 @@ class moves():
         self.bishops = Bishop(self.board)
         self.rooks = Rook(self.board)
         self.queens = Queen(self.board)
-        
 
         # Precompute king and knight moves 
         for square in range(64):
@@ -63,6 +62,7 @@ class moves():
 
         if piece_type == 'king':
             pieces = self.board.white_king if is_white else self.board.black_king
+            castling_availability = self.castling_rights()
         else:
             return moves
         
@@ -71,20 +71,27 @@ class moves():
         temp_pieces = pieces
 
         while temp_pieces:
-            # Get the position of the least significant bit
             square = (temp_pieces & -temp_pieces).bit_length() - 1
             temp_pieces &= temp_pieces - 1
             
             row, col = divmod(square, 8)
             from_square = chr(ord('a') + col) + str(row + 1)
+
+            possible_moves = self.board.king_moves[square]
+            possible_moves &= ~friendly_pieces # Filter out friendly piece occupations
             
-            if piece_type == 'king':
-                possible_moves = self.board.king_moves[square]
-            elif piece_type == 'knight':
-                possible_moves = self.board.knight_moves[square]
+            # castle handling
+            if is_white and from_square == 'e1':
+                if castling_availability & 0x40:  # kingside
+                    moves.append((from_square, 'g1'))
+                if castling_availability & 0x4:   # queenside
+                    moves.append((from_square, 'c1'))
+            elif not is_white and from_square == 'e8':
+                if castling_availability & 0x4000000000000000:  # kingside
+                    moves.append((from_square, 'g8'))
+                if castling_availability & 0x400000000000000:   # queenside
+                    moves.append((from_square, 'c8'))
             
-            # Filter out squares occupied by friendly pieces
-            possible_moves &= ~friendly_pieces
             temp_moves = possible_moves
 
             while temp_moves:
@@ -113,22 +120,30 @@ class moves():
 
 
     def make_move(self, from_square, to_square):
+        # get positions
         from_bit = self.pieces.square_to_bitboard(from_square)
         to_bit = self.pieces.square_to_bitboard(to_square)
-        
-
         piece = self.board.get_piece_at_square(from_square)
         is_white_piece = piece.isupper()
         
-
         if is_white_piece != self.board.white_to_move:
             return False
         
+        # castling handling
+        is_castling = False
+        if piece.upper() == 'K':
+            if from_square == 'e1' and to_square in ['g1', 'c1']:
+                is_castling = True
+            elif from_square == 'e8' and to_square in ['g8', 'c8']:
+                is_castling = True
 
+        if is_castling:
+            return self._execute_castling(from_square, to_square, is_white_piece)
+        
+        # en passant handling
         is_en_passant_capture = False
         captured_pawn_bit = 0
         
-        # determine en_passant capture
         if piece.upper() == 'P' and self.board.en_passant_target:
             from_row, from_col = self.pieces.square_name_to_coords(from_square)
             to_row, to_col = self.pieces.square_name_to_coords(to_square)
@@ -143,7 +158,7 @@ class moves():
         
         self.board.en_passant_target = None
         
-        # Remove piece from original position to destination
+        # handle piece movement
         if piece.upper() == 'P':
             if is_white_piece:
                 self.board.white_pawns &= ~from_bit
@@ -152,15 +167,15 @@ class moves():
                 self.board.black_pawns &= ~from_bit
                 self.board.black_pawns |= to_bit
             
-            # Check for en passant
             from_row, from_col = self.pieces.square_name_to_coords(from_square)
             to_row, to_col = self.pieces.square_name_to_coords(to_square)
             
-
+            # check en passant
             if abs(to_row - from_row) == 2:
                 en_passant_row = (from_row + to_row) // 2 
                 en_passant_square = chr(ord('a') + to_col) + str(en_passant_row + 1)
                 self.board.en_passant_target = en_passant_square
+        # regular pieces
         elif piece.upper() == 'R':
             if is_white_piece:
                 self.board.white_rooks &= ~from_bit
@@ -272,6 +287,7 @@ class moves():
         
         return not king_in_check
     
+    
     def save_board_state(self):
         return {
             'white_pawns': self.board.white_pawns,
@@ -309,6 +325,41 @@ class moves():
         self.board.en_passant_target = state['en_passant_target']
         self.board.move_count = state['move_count']
 
+    
+    def castling_rights(self):
+            castling_mask = 0
+
+            # white castling
+            if (self.board.white_king & 0x10) and not self.is_king_in_check(True):
+                if self.board.white_rooks & 0x80:  # kingside 
+                    if not (self.pieces.get_all_pieces() & 0x60):
+                        opponent_attacks = self.generate_attack_map(False)
+                        if not (opponent_attacks & 0x60):
+                            castling_mask |= 0x40  # g1 square
+                
+                # Queenside castling
+                if self.board.white_rooks & 0x1: 
+                    if not (self.pieces.get_all_pieces() & 0xE): 
+                        opponent_attacks = self.generate_attack_map(False)
+                        if not (opponent_attacks & 0xC):
+                            castling_mask |= 0x4  # c1 square
+
+            # Black castling
+            if (self.board.black_king & 0x1000000000000000) and not self.is_king_in_check(False):
+                if self.board.black_rooks & 0x8000000000000000:  # kingside
+                    if not (self.pieces.get_all_pieces() & 0x6000000000000000):
+                        opponent_attacks = self.generate_attack_map(True)
+                        if not (opponent_attacks & 0x6000000000000000):
+                            castling_mask |= 0x4000000000000000  # g8 square
+                
+                # Queenside castling
+                if self.board.black_rooks & 0x100000000000000: 
+                    if not (self.pieces.get_all_pieces() & 0xE00000000000000):
+                        opponent_attacks = self.generate_attack_map(True)
+                        if not (opponent_attacks & 0xC00000000000000):
+                            castling_mask |= 0x400000000000000  # c8 square
+
+            return castling_mask
 
     def is_king_in_check(self, is_white):
         # Check if king in check
@@ -320,6 +371,40 @@ class moves():
         opponent_attacks = self.generate_attack_map(opponent_is_white)
 
         return (opponent_attacks & king_bitboard) != 0
+    
+
+    def _execute_castling(self, from_square, to_square, is_white):
+        """Execute castling move"""
+        
+        if is_white:
+            # Move king
+            self.board.white_king &= ~self.pieces.square_to_bitboard(from_square)
+            self.board.white_king |= self.pieces.square_to_bitboard(to_square)
+            
+            if to_square == 'g1':  # Kingside castling
+                self.board.white_rooks &= ~self.pieces.square_to_bitboard('h1')
+                self.board.white_rooks |= self.pieces.square_to_bitboard('f1')
+            else:  # Queenside castling (c1)
+                self.board.white_rooks &= ~self.pieces.square_to_bitboard('a1')
+                self.board.white_rooks |= self.pieces.square_to_bitboard('d1')
+        else:
+            # Move king
+            self.board.black_king &= ~self.pieces.square_to_bitboard(from_square)
+            self.board.black_king |= self.pieces.square_to_bitboard(to_square)
+            
+            if to_square == 'g8':  # Kingside castling
+                self.board.black_rooks &= ~self.pieces.square_to_bitboard('h8')
+                self.board.black_rooks |= self.pieces.square_to_bitboard('f8')
+            else:  # Queenside castling (c8)
+                self.board.black_rooks &= ~self.pieces.square_to_bitboard('a8')
+                self.board.black_rooks |= self.pieces.square_to_bitboard('d8')
+        
+        # Switch turns
+        self.board.white_to_move = not self.board.white_to_move
+        if self.board.white_to_move:
+            self.board.move_count += 1
+        
+        return True
     
 
     def generate_attack_map(self, is_white):
